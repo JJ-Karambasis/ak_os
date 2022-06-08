@@ -4,14 +4,18 @@
 #ifdef AK_OS_STATIC
 #define AK_OS_DEF static
 #else
-#ifdef __cpluscplus
+#ifdef __cplusplus
 #define AK_OS_DEF extern "C"
 #else
 #define AK_OS_DEF extern
 #endif // __cplusplus
 #endif //AK_OS_STATIC
 
+#ifndef __cplusplus
 #include <stdalign.h>
+#endif
+
+
 #include <stdarg.h>
 #include <stddef.h>
 
