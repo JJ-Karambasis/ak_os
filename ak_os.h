@@ -33,14 +33,23 @@ typedef akos_i32 akos_b32;
 #define akos_true  1
 #define akos_false 0
 
+#define AKOS_INVALID_FILE_SIZE ((akos_u64)-1)
+
 enum 
 {
     AKOS_EVENT_TYPE_NONE,
     AKOS_EVENT_TYPE_WINDOW_CLOSED
 };
 
+enum 
+{
+    AKOS_FILE_FLAG_READ  = (1 << 0),
+    AKOS_FILE_FLAG_WRITE = (1 << 1)
+};
+
 typedef struct akos_context akos_context;
 typedef akos_u64 akos_handle;
+typedef int32_t akos_thread_callback(void* UserData);
 
 typedef struct akos_window_create_info
 {
@@ -61,10 +70,40 @@ typedef struct akos_event_list
     const akos_event* Events;
 } akos_event_list;
 
+AK_OS_DEF void* AKOS_Reserve(size_t Size);
+AK_OS_DEF bool  AKOS_Commit(void* Memory, size_t Size);
+AK_OS_DEF void  AKOS_Decommit(void* Memory, size_t Size);
+AK_OS_DEF void  AKOS_Release(void* Memory);
+
+AK_OS_DEF void* AKOS_Allocate(size_t Size);
+AK_OS_DEF void  AKOS_Free(void* Memory);
+
+AK_OS_DEF uint32_t AKOS_Get_Current_Thread_ID();
+
+AK_OS_DEF bool AKOS_Directory_Exists(const char* Directory);
+AK_OS_DEF bool AKOS_Create_Directory(const char* Directory);
+
 AK_OS_DEF akos_context* AKOS_Create_Context();
-AK_OS_DEF void          AKOS_Delete_Context();
+AK_OS_DEF void          AKOS_Delete_Context(akos_context* Context);
 AK_OS_DEF akos_context* AKOS_Get_Context();
 AK_OS_DEF void          AKOS_Set_Context(akos_context* Context);
+
+AK_OS_DEF akos_handle AKOS_Create_Thread(akos_thread_callback* ThreadCallback, void* UserData);
+AK_OS_DEF void AKOS_Delete_Thread(akos_handle Handle);
+AK_OS_DEF void AKOS_Thread_Wait(akos_handle Handle);
+
+AK_OS_DEF akos_handle AKOS_Create_Mutex();
+AK_OS_DEF void AKOS_Delete_Mutex(akos_handle Handle);
+AK_OS_DEF void AKOS_Mutex_Lock(akos_handle Handle);
+AK_OS_DEF void AKOS_Mutex_Unlock(akos_handle Handle);
+
+AK_OS_DEF akos_handle AKOS_Create_File(const char* Filepath, akos_u64 Flags);
+AK_OS_DEF akos_u64 AKOS_Get_File_Size(akos_handle Handle);
+AK_OS_DEF bool AKOS_Read_File( akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset);
+AK_OS_DEF bool AKOS_Write_File(akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset);
+AK_OS_DEF void AKOS_Delete_File(akos_handle Handle);
+
+AK_OS_DEF bool AKOS_Write_Entire_File(const char* Filepath, void* Data, akos_u32 WriteSize);
 
 AK_OS_DEF akos_event_list AKOS_Poll_Events();
 
@@ -76,6 +115,9 @@ AK_OS_DEF void AKOS_Delete_Window(akos_handle WindowHandle);
 #ifdef AK_OS_IMPLEMENTATION
 
 #define AKOS__HANDLE_TYPE_WINDOW 1
+#define AKOS__HANDLE_TYPE_THREAD 2
+#define AKOS__HANDLE_TYPE_MUTEX  3
+#define AKOS__HANDLE_TYPE_FILE   4
 
 #ifndef AK_OS_MALLOC
 #include <stdlib.h>
@@ -552,8 +594,8 @@ typedef struct akos__hashmap
     akos__hashmap_slot* Slots;
     
     akos_u32* ValueSlots;
-    void* Keys;
-    void* Values;
+    akos_u8* Keys;
+    akos_u8* Values;
     
     akos__hash_function* Hash_Function;
     akos__hash_comparer* Hash_Comparer;
@@ -565,7 +607,7 @@ static akos__hashmap AKOS__Create_Hashmap(akos_u32 SlotCapacity, akos_u32 ValueC
     akos__hashmap Result;
     
     Result.Length = 0;
-    Result.SlotCapacity = AKOS__Ceil_Pow2(SlotCapacity);
+    Result.SlotCapacity = (akos_u32)AKOS__Ceil_Pow2(SlotCapacity);
     Result.ValueCapacity = ValueCapacity;
     Result.KeySize  = KeySize;
     Result.ValueSize = ValueSize;
@@ -690,7 +732,7 @@ static void AKOS__Hashmap_Add(akos__hashmap* Hashmap, void* Key, void* Value)
     AK_OS_ASSERT(AKOS__Hashmap_Find_Slot(Hashmap, Key) < 0, "Cannot insert duplicate keys into hash map");
     
     if(Hashmap->Length >= (Hashmap->SlotCapacity - Hashmap->SlotCapacity/3))
-        AKOS__Hashmap_Realloc_Slots(Hashmap, AKOS__Ceil_Pow2(Hashmap->SlotCapacity*2));
+        AKOS__Hashmap_Realloc_Slots(Hashmap, (akos_u32)AKOS__Ceil_Pow2(Hashmap->SlotCapacity*2));
     
     akos_u32 SlotMask = Hashmap->SlotCapacity-1;
     akos_u32 Hash = Hashmap->Hash_Function(Key);
@@ -785,7 +827,7 @@ akos__event_buffer AKOS__Create_Event_Buffer(akos_u64 InitialCapacity)
     akos__event_buffer Result;
     Result.Capacity = InitialCapacity;
     Result.Length = 0;
-    Result.Events = AKOS__Malloc(InitialCapacity*sizeof(akos_event));
+    Result.Events = (akos_event*)AKOS__Malloc(InitialCapacity*sizeof(akos_event));
     if(!Result.Events)
     {
         //TODO(JJ): Diagnostic and error logging
@@ -799,7 +841,7 @@ void AKOS__Add_Event_To_Buffer(akos__event_buffer* EventBuffer, akos_event* Even
     if(EventBuffer->Length == EventBuffer->Capacity)
     {
         akos_u64 NewCapacity = EventBuffer->Capacity*2;
-        akos_event* Events = AKOS__Malloc(NewCapacity*sizeof(akos_event));
+        akos_event* Events = (akos_event*)AKOS__Malloc(NewCapacity*sizeof(akos_event));
         if(!Events)
         {
             //TODO(JJ): Diagnostic and error logging
@@ -910,6 +952,23 @@ typedef struct akos__window
     HWND HWND;
 } akos__window;
 
+typedef struct akos__thread
+{
+    HANDLE Handle;
+    DWORD  ThreadID;
+} akos__thread;
+
+typedef struct akos__mutex
+{
+    CRITICAL_SECTION CriticalSection;
+} akos__mutex;
+
+typedef struct akos__file
+{
+    HANDLE Handle;
+    akos_u64 Flags;
+} akos__file;
+
 typedef struct akos_context
 {
     akos__arena PermanentStorage;
@@ -917,15 +976,56 @@ typedef struct akos_context
     akos__user32 User32;
     
     akos__pool Windows;
+    akos__pool Threads;
+    akos__pool Mutexes;
+    akos__pool Files;
     
     akos__event_manager EventManager;
 } akos_context;
+
+AK_OS_DEF void* AKOS_Reserve(size_t Size)
+{
+    void* Result = VirtualAlloc(0, Size, MEM_RESERVE, PAGE_READWRITE);
+    return Result;
+}
+
+AK_OS_DEF bool  AKOS_Commit(void* Memory, size_t Size)
+{
+    bool Result = VirtualAlloc(Memory, Size, MEM_COMMIT, PAGE_READWRITE) != NULL;
+    return Result;
+}
+
+AK_OS_DEF void  AKOS_Decommit(void* Memory, size_t Size)
+{
+    VirtualFree(Memory, Size, MEM_DECOMMIT);
+}
+
+AK_OS_DEF void  AKOS_Release(void* Memory)
+{
+    VirtualFree(Memory, 0, MEM_RELEASE);
+}
+
+AK_OS_DEF uint32_t AKOS_Get_Current_Thread_ID()
+{
+    return GetCurrentThreadId();
+}
+
+AK_OS_DEF bool AKOS_Directory_Exists(const char* Directory)
+{
+    DWORD Attrib = GetFileAttributes(Directory);
+    return (Attrib != INVALID_FILE_ATTRIBUTES && Attrib & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+AK_OS_DEF bool AKOS_Create_Directory(const char* Directory)
+{
+    return CreateDirectoryA(Directory, NULL);
+}
 
 static akos_handle AKOS__Win32_Get_Handle_From_HWND(HWND Window)
 {
     akos_context* Context = AKOS_Get_Context();
     akos__user32* User32 = &Context->User32;
-    akos_u16 WindowIndex = User32->GetWindowLongPtrA(Window, GWLP_USERDATA);
+    akos_u16 WindowIndex = (akos_u16)User32->GetWindowLongPtrA(Window, GWLP_USERDATA);
     if(WindowIndex)
     {
         akos_handle Handle = AKOS__Pool_Get_ID_From_Index(&Context->Windows, WindowIndex-1);
@@ -950,7 +1050,7 @@ static LRESULT CALLBACK AKOS__Win32_Default_Window_Proc(HWND Window, UINT Messag
         {
             //NOTE(EVERYONE): Set the user data to window index plus one because GetWindowLongPtrA returns 0
             //if the user data has not been set. Since the 0 index will conflict with this restriction add 1 to every index
-            akos_u16 WindowIndex = (akos_u16)((LPCREATESTRUCT)LParam)->lpCreateParams;
+            akos_u16 WindowIndex = (akos_u16)(size_t)((LPCREATESTRUCT)LParam)->lpCreateParams;
             User32->SetWindowLongPtrA(Window, GWLP_USERDATA, (LONG_PTR)(WindowIndex+1));
         } break;
         
@@ -1049,6 +1149,27 @@ AK_OS_DEF akos_context* AKOS_Create_Context()
         goto error;
     }
     
+    Context->Threads = AKOS__Create_Pool(64, sizeof(akos__thread), AKOS__HANDLE_TYPE_THREAD);
+    if(!Context->Threads.Data)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
+    Context->Mutexes = AKOS__Create_Pool(64, sizeof(akos__mutex), AKOS__HANDLE_TYPE_MUTEX);
+    if(!Context->Mutexes.Data)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
+    Context->Files = AKOS__Create_Pool(64, sizeof(akos__file), AKOS__HANDLE_TYPE_FILE);
+    if(!Context->Files.Data)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
     Context->EventManager = AKOS__Create_Event_Manager();
     if(!Context->EventManager.EventBuffers[0].Capacity)
     {
@@ -1079,6 +1200,326 @@ AK_OS_DEF void AKOS_Delete_Context(akos_context* Context)
         User32->PostQuitMessage(0);
         AKOS_Poll_Events();
         //Delete context resources here
+    }
+}
+
+AK_OS_DEF akos_handle AKOS_Create_Thread(akos_thread_callback* ThreadCallback, void* UserData)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos_handle Handle = AKOS__Pool_Allocate(&Context->Threads);
+    if(!Handle)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__thread* Thread = (akos__thread*)AKOS__Pool_Get(&Context->Threads, Handle);
+    Thread->Handle = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadCallback, UserData, 0, &Thread->ThreadID);
+    if(Thread->Handle == INVALID_HANDLE_VALUE)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
+    return Handle;
+    
+    error:
+    AKOS_Delete_Thread(Handle);
+    return 0;
+}
+
+AK_OS_DEF void AKOS_Delete_Thread(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__thread* Thread = (akos__thread*)AKOS__Pool_Get(&Context->Threads, Handle);
+    if(Thread)
+    {
+        CloseHandle(Thread->Handle);
+        AKOS__Pool_Free(&Context->Threads, Handle);
+    }
+}
+
+AK_OS_DEF void AKOS_Thread_Wait(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__thread* Thread = (akos__thread*)AKOS__Pool_Get(&Context->Threads, Handle);
+    if(Thread)
+    {
+        WaitForSingleObject(Thread->Handle, INFINITE);
+    }
+}
+
+AK_OS_DEF akos_handle AKOS_Create_Mutex()
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos_handle Handle = AKOS__Pool_Allocate(&Context->Mutexes);
+    if(!Handle)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__mutex* Mutex = (akos__mutex*)AKOS__Pool_Get(&Context->Mutexes, Handle);
+    InitializeCriticalSection(&Mutex->CriticalSection);
+    return Handle;
+}
+
+AK_OS_DEF void AKOS_Delete_Mutex(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__mutex* Mutex = (akos__mutex*)AKOS__Pool_Get(&Context->Mutexes, Handle);
+    if(Mutex)
+    {
+        DeleteCriticalSection(&Mutex->CriticalSection);
+        AKOS__Pool_Free(&Context->Mutexes, Handle);
+    }
+}
+
+AK_OS_DEF void AKOS_Mutex_Lock(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__mutex* Mutex = (akos__mutex*)AKOS__Pool_Get(&Context->Mutexes, Handle);
+    if(Mutex) EnterCriticalSection(&Mutex->CriticalSection);
+}
+
+AK_OS_DEF void AKOS_Mutex_Unlock(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__mutex* Mutex = (akos__mutex*)AKOS__Pool_Get(&Context->Mutexes, Handle);
+    if(Mutex) LeaveCriticalSection(&Mutex->CriticalSection);
+}
+
+AK_OS_DEF akos_handle AKOS_Create_File(const char* Filepath, akos_u64 Flags)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    DWORD DesiredAttributes   = 0;
+    DWORD CreationDisposition = 0;
+    
+    int32_t ReadAndWrite = Flags == (AKOS_FILE_FLAG_READ|AKOS_FILE_FLAG_WRITE);
+    if(ReadAndWrite)
+    {
+        DesiredAttributes = GENERIC_READ|GENERIC_WRITE;
+        CreationDisposition = OPEN_ALWAYS;
+    }
+    else if(Flags & AKOS_FILE_FLAG_READ)
+    {
+        DesiredAttributes = GENERIC_READ;
+        CreationDisposition = OPEN_EXISTING;
+    }
+    else if(Flags & AKOS_FILE_FLAG_WRITE)
+    {
+        DesiredAttributes   = GENERIC_WRITE;
+        CreationDisposition = CREATE_ALWAYS;
+    }
+    else
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos_handle Handle = AKOS__Pool_Allocate(&Context->Files);
+    if(!Handle)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__file* File = (akos__file*)AKOS__Pool_Get(&Context->Files, Handle);
+    
+    File->Handle = CreateFile(Filepath, DesiredAttributes, 0, NULL, CreationDisposition, FILE_ATTRIBUTE_NORMAL, NULL);
+    if(File->Handle == INVALID_HANDLE_VALUE)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
+    File->Flags = Flags;
+    
+    return Handle;
+    
+    error:
+    AKOS_Delete_File(Handle);
+    return 0;
+}
+
+AK_OS_DEF akos_u64 AKOS_Get_File_Size(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return AKOS_INVALID_FILE_SIZE;
+    }
+    
+    akos__file* File = (akos__file*)AKOS__Pool_Get(&Context->Files, Handle);
+    if(!File)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return AKOS_INVALID_FILE_SIZE;
+    }
+    
+    if(!(File->Flags & AKOS_FILE_FLAG_READ))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return AKOS_INVALID_FILE_SIZE;
+    }
+    
+    LARGE_INTEGER FileSize;
+    GetFileSizeEx(File->Handle, &FileSize);
+    return FileSize.QuadPart;
+}
+
+AK_OS_DEF bool AKOS_Read_File(akos_handle Handle,  void* Data, akos_u32 DataSize, akos_u64 Offset)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    akos__file* File = (akos__file*)AKOS__Pool_Get(&Context->Files, Handle);
+    if(!File)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    if(!(File->Flags & AKOS_FILE_FLAG_READ))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    
+    OVERLAPPED* POverlappedOffset = NULL;
+    OVERLAPPED OverlappedOffset = {};
+    if(Offset != AKOS_INVALID_FILE_SIZE)
+    {
+        OverlappedOffset.Offset = (DWORD)(Offset & 0xFFFFFFFF);
+        OverlappedOffset.OffsetHigh = (DWORD)((Offset >> 32) & 0xFFFFFFFF);
+        POverlappedOffset = &OverlappedOffset;
+    }
+    
+    DWORD BytesRead;
+    if(!ReadFile(File->Handle, Data, DataSize, &BytesRead, POverlappedOffset))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    if(BytesRead != DataSize)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    return true;
+}
+
+AK_OS_DEF bool AKOS_Write_File(akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    akos__file* File = (akos__file*)AKOS__Pool_Get(&Context->Files, Handle);
+    if(!File)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    if(!(File->Flags & AKOS_FILE_FLAG_WRITE))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    
+    OVERLAPPED* POverlappedOffset = NULL;
+    OVERLAPPED OverlappedOffset = {};
+    if(Offset != AKOS_INVALID_FILE_SIZE)
+    {
+        OverlappedOffset.Offset = (DWORD)(Offset & 0xFFFFFFFF);
+        OverlappedOffset.OffsetHigh = (DWORD)((Offset >> 32) & 0xFFFFFFFF);
+        POverlappedOffset = &OverlappedOffset;
+    }
+    
+    DWORD BytesWritten;
+    if(!WriteFile(File->Handle, Data, DataSize, &BytesWritten, POverlappedOffset))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    if(BytesWritten != DataSize)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return false;
+    }
+    
+    return true;
+}
+
+AK_OS_DEF void AKOS_Delete_File(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
     }
 }
 
@@ -1137,7 +1578,7 @@ AK_OS_DEF akos_handle AKOS_Create_Window(const akos_window_create_info* WindowCr
     
     DWORD Style = WS_OVERLAPPEDWINDOW|WS_VISIBLE;
     
-    akos__window* Window = AKOS__Pool_Get(&Context->Windows, Handle);
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, Handle);
     RECT WindowRect = {0, 0, (LONG)WindowCreateInfo->Width, (LONG)WindowCreateInfo->Height};
     User32->AdjustWindowRectEx(&WindowRect, Style, FALSE, 0);
     
@@ -1169,7 +1610,7 @@ AK_OS_DEF void AKOS_Delete_Window(akos_handle Handle)
     
     akos__user32* User32 = &Context->User32;
     
-    akos__window* Window = AKOS__Pool_Get(&Context->Windows, Handle);
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, Handle);
     if(Window)
     {
         User32->DestroyWindow(Window->HWND);
@@ -1179,8 +1620,43 @@ AK_OS_DEF void AKOS_Delete_Window(akos_handle Handle)
 
 #endif //_WIN32
 
+AK_OS_DEF void* AKOS_Allocate(size_t Size)
+{
+    void* Result = AKOS_Reserve(Size);
+    if(!AKOS_Commit(Result, Size))
+    {
+        AKOS_Release(Result);
+        return NULL;
+    }
+    return Result;
+}
+
+AK_OS_DEF void  AKOS_Free(void* Memory)
+{
+    if(Memory) AKOS_Release(Memory);
+}
+
 static akos_context* AKOS__Context;
 AK_OS_DEF akos_context* AKOS_Get_Context() { return AKOS__Context; }
 AK_OS_DEF void AKOS_Set_Context(akos_context* Context) { AKOS__Context = Context; }
+
+AK_OS_DEF bool AKOS_Write_Entire_File(const char* Filepath, void* Data, akos_u32 WriteSize)
+{
+    akos_handle Handle = AKOS_Create_File(Filepath, AKOS_FILE_FLAG_WRITE);
+    if(!Handle)
+    {
+        //TODO(JJ): Read error from create file
+        return false;
+    }
+    
+    bool Result = AKOS_Write_File(Handle, Data, WriteSize, AKOS_INVALID_FILE_SIZE);
+    if(!Result)
+    {
+        //TODO(JJ): Read error from write file
+    }
+    
+    AKOS_Delete_File(Handle);
+    return Result;
+}
 
 #endif //AK_OS_IMPLEMENTATION
