@@ -110,6 +110,23 @@ AK_OS_DEF akos_event_list AKOS_Poll_Events();
 AK_OS_DEF akos_handle AKOS_Create_Window(const akos_window_create_info* WindowCreateInfo);
 AK_OS_DEF void AKOS_Delete_Window(akos_handle WindowHandle);
 
+#ifdef AK_OS_VULKAN_HELPERS
+
+#ifndef AK_OS_VULKAN_INCLUDE
+
+#ifdef _WIN32
+#define VK_USE_PLATFORM_WIN32_KHR
+#endif //_WIN32
+
+#include <vulkan/vulkan.h>
+
+#endif //AK_OS_VULKAN_INCLUDE
+
+AK_OS_DEF VkSurfaceKHR AKOS_Create_Vulkan_Surface(akos_handle WindowHandle, VkInstance Instance, PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr, 
+                                                  VkAllocationCallbacks* Callbacks);
+
+#endif //AK_OS_VULKAN_HELPERS
+
 #endif //AK_OS_H
 
 #ifdef AK_OS_IMPLEMENTATION
@@ -1544,6 +1561,7 @@ AK_OS_DEF akos_event_list AKOS_Poll_Events()
             case WM_QUIT:
             {
                 //TODO(JJ): Delete context resources here
+                int x = 0;
             } break;
             
             default:
@@ -1617,6 +1635,50 @@ AK_OS_DEF void AKOS_Delete_Window(akos_handle Handle)
         AKOS__Pool_Free(&Context->Windows, Handle);
     }
 }
+
+#ifdef AK_OS_VULKAN_HELPERS
+
+AK_OS_DEF VkSurfaceKHR AKOS_Create_Vulkan_Surface(akos_handle WindowHandle, VkInstance Instance,
+                                                  PFN_vkGetInstanceProcAddr vkGetInstanceProcAddrAK, 
+                                                  VkAllocationCallbacks* Callbacks)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    PFN_vkCreateWin32SurfaceKHR vkCreateWin32SurfaceKHR = (PFN_vkCreateWin32SurfaceKHR)vkGetInstanceProcAddrAK(Instance, "vkCreateWin32SurfaceKHR");
+    if(!vkCreateWin32SurfaceKHR)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    VkWin32SurfaceCreateInfoKHR SurfaceCreateInfo = {};
+    SurfaceCreateInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    SurfaceCreateInfo.hinstance = GetModuleHandle(0);
+    SurfaceCreateInfo.hwnd = Window->HWND;
+    
+    VkSurfaceKHR Surface;
+    if(vkCreateWin32SurfaceKHR(Instance, &SurfaceCreateInfo, Callbacks, &Surface) != VK_SUCCESS)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    return Surface;
+}
+
+#endif //AK_OS_VULKAN_HELPERS
 
 #endif //_WIN32
 
