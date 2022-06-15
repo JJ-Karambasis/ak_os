@@ -50,6 +50,7 @@ enum
 typedef struct akos_context akos_context;
 typedef akos_u64 akos_handle;
 typedef int32_t akos_thread_callback(void* UserData);
+typedef void akos_timer_callback(void* UserData);
 
 typedef struct akos_window_create_info
 {
@@ -88,6 +89,9 @@ AK_OS_DEF void          AKOS_Delete_Context(akos_context* Context);
 AK_OS_DEF akos_context* AKOS_Get_Context();
 AK_OS_DEF void          AKOS_Set_Context(akos_context* Context);
 
+AK_OS_DEF akos_u64 AKOS_Performance_Counter();
+AK_OS_DEF akos_u64 AKOS_Performance_Frequency();
+
 AK_OS_DEF akos_handle AKOS_Create_Thread(akos_thread_callback* ThreadCallback, void* UserData);
 AK_OS_DEF void AKOS_Delete_Thread(akos_handle Handle);
 AK_OS_DEF void AKOS_Thread_Wait(akos_handle Handle);
@@ -96,6 +100,16 @@ AK_OS_DEF akos_handle AKOS_Create_Mutex();
 AK_OS_DEF void AKOS_Delete_Mutex(akos_handle Handle);
 AK_OS_DEF void AKOS_Mutex_Lock(akos_handle Handle);
 AK_OS_DEF void AKOS_Mutex_Unlock(akos_handle Handle);
+
+AK_OS_DEF akos_handle AKOS_Create_Event();
+AK_OS_DEF void AKOS_Delete_Event(akos_handle Handle);
+AK_OS_DEF void AKOS_Event_Signal(akos_handle Handle);
+AK_OS_DEF void AKOS_Event_Wait(akos_handle Handle);
+
+AK_OS_DEF akos_handle AKOS_Create_Timer();
+AK_OS_DEF void AKOS_Delete_Timer(akos_handle Handle);
+AK_OS_DEF void AKOS_Timer_Set(akos_handle Handle, uint64_t Ticks, akos_timer_callback* TimerCallback, void* UserData);
+AK_OS_DEF void AKOS_Timer_Wait(akos_handle Handle);
 
 AK_OS_DEF akos_handle AKOS_Create_File(const char* Filepath, akos_u64 Flags);
 AK_OS_DEF akos_u64 AKOS_Get_File_Size(akos_handle Handle);
@@ -109,6 +123,7 @@ AK_OS_DEF akos_event_list AKOS_Poll_Events();
 
 AK_OS_DEF akos_handle AKOS_Create_Window(const akos_window_create_info* WindowCreateInfo);
 AK_OS_DEF void AKOS_Delete_Window(akos_handle WindowHandle);
+AK_OS_DEF void* AKOS_Window_Get_Platform_Data(akos_handle WindowHandle);
 
 #ifdef AK_OS_VULKAN_HELPERS
 
@@ -135,6 +150,8 @@ AK_OS_DEF VkSurfaceKHR AKOS_Create_Vulkan_Surface(akos_handle WindowHandle, VkIn
 #define AKOS__HANDLE_TYPE_THREAD 2
 #define AKOS__HANDLE_TYPE_MUTEX  3
 #define AKOS__HANDLE_TYPE_FILE   4
+#define AKOS__HANDLE_TYPE_EVENT  5
+#define AKOS__HANDLE_TYPE_TIMER  6
 
 #ifndef AK_OS_MALLOC
 #include <stdlib.h>
@@ -986,6 +1003,18 @@ typedef struct akos__file
     akos_u64 Flags;
 } akos__file;
 
+typedef struct akos__event
+{
+    HANDLE Handle;
+} akos__event;
+
+typedef struct akos__timer
+{
+    HANDLE Handle;
+    akos_timer_callback* Callback;
+    void* UserData;
+} akos__timer;
+
 typedef struct akos_context
 {
     akos__arena PermanentStorage;
@@ -996,6 +1025,8 @@ typedef struct akos_context
     akos__pool Threads;
     akos__pool Mutexes;
     akos__pool Files;
+    akos__pool Events;
+    akos__pool Timers;
     
     akos__event_manager EventManager;
 } akos_context;
@@ -1187,6 +1218,20 @@ AK_OS_DEF akos_context* AKOS_Create_Context()
         goto error;
     }
     
+    Context->Events = AKOS__Create_Pool(64, sizeof(akos__event), AKOS__HANDLE_TYPE_EVENT);
+    if(!Context->Events.Data)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
+    Context->Timers = AKOS__Create_Pool(64, sizeof(akos__timer), AKOS__HANDLE_TYPE_TIMER);
+    if(!Context->Timers.Data)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
     Context->EventManager = AKOS__Create_Event_Manager();
     if(!Context->EventManager.EventBuffers[0].Capacity)
     {
@@ -1218,6 +1263,20 @@ AK_OS_DEF void AKOS_Delete_Context(akos_context* Context)
         AKOS_Poll_Events();
         //Delete context resources here
     }
+}
+
+AK_OS_DEF akos_u64 AKOS_Performance_Counter()
+{
+    LARGE_INTEGER Result;
+    QueryPerformanceCounter(&Result);
+    return Result.QuadPart;
+}
+
+AK_OS_DEF akos_u64 AKOS_Performance_Frequency()
+{
+    LARGE_INTEGER Result;
+    QueryPerformanceFrequency(&Result);
+    return Result.QuadPart;
 }
 
 AK_OS_DEF akos_handle AKOS_Create_Thread(akos_thread_callback* ThreadCallback, void* UserData)
@@ -1346,6 +1405,155 @@ AK_OS_DEF void AKOS_Mutex_Unlock(akos_handle Handle)
     
     akos__mutex* Mutex = (akos__mutex*)AKOS__Pool_Get(&Context->Mutexes, Handle);
     if(Mutex) LeaveCriticalSection(&Mutex->CriticalSection);
+}
+
+AK_OS_DEF akos_handle AKOS_Create_Event()
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos_handle Handle = AKOS__Pool_Allocate(&Context->Events);
+    if(!Handle)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__event* Event = (akos__event*)AKOS__Pool_Get(&Context->Events, Handle);
+    Event->Handle = CreateEventA(NULL, FALSE, FALSE, NULL);
+    return Handle;
+}
+
+AK_OS_DEF void AKOS_Delete_Event(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__event* Event = (akos__event*)AKOS__Pool_Get(&Context->Events, Handle);
+    if(Event)
+    {
+        CloseHandle(Event->Handle);
+        AKOS__Pool_Free(&Context->Events, Handle);
+    }
+}
+
+AK_OS_DEF void AKOS_Event_Signal(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__event* Event = (akos__event*)AKOS__Pool_Get(&Context->Events, Handle);
+    if(Event) SetEvent(Event->Handle);
+}
+
+AK_OS_DEF void AKOS_Event_Wait(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__event* Event = (akos__event*)AKOS__Pool_Get(&Context->Events, Handle);
+    if(Event) WaitForSingleObject(Event->Handle, INFINITE);
+}
+
+AK_OS_DEF akos_handle AKOS_Create_Timer()
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos_handle Handle = AKOS__Pool_Allocate(&Context->Timers);
+    if(!Handle)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__timer* Timer = (akos__timer*)AKOS__Pool_Get(&Context->Timers, Handle);
+    Timer->Handle = CreateWaitableTimerA(NULL, FALSE, NULL);
+    return Handle;
+}
+
+AK_OS_DEF void AKOS_Delete_Timer(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__timer* Timer = (akos__timer*)AKOS__Pool_Get(&Context->Timers, Handle);
+    if(Timer)
+    {
+        CloseHandle(Timer->Handle);
+        AKOS__Pool_Free(&Context->Timers, Handle);
+    }
+}
+
+void AKOS__Win32_Internal_Timer_Completion_Routine(LPVOID UserData, DWORD Low, DWORD High)
+{
+    akos_u16 TimerIndex = (akos_u16)(size_t)UserData;
+    akos_context* Context = AKOS_Get_Context();
+    
+    akos_handle TimerHandle = AKOS__Pool_Get_ID_From_Index(&Context->Timers, TimerIndex);
+    akos__timer* Timer = (akos__timer*)AKOS__Pool_Get(&Context->Timers, TimerHandle);
+    if(Timer && Timer->Callback) Timer->Callback(Timer->UserData);
+}
+
+AK_OS_DEF void AKOS_Timer_Set(akos_handle Handle, uint64_t TicksToWait, akos_timer_callback* TimerCallback, void* UserData)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__timer* Timer = (akos__timer*)AKOS__Pool_Get(&Context->Timers, Handle);
+    if(Timer)
+    {
+        Timer->Callback = TimerCallback;
+        Timer->UserData = UserData;
+        uint64_t TicksPerHundredSecond = AKOS_Performance_Frequency()/10000000;
+        
+        akos_u16 TimerIndex = (akos_u16)Handle;
+        
+        LARGE_INTEGER TimerValue;
+        TimerValue.QuadPart = -((int64_t)TicksToWait/(int64_t)TicksPerHundredSecond);
+        SetWaitableTimer(Timer->Handle, &TimerValue, 0, AKOS__Win32_Internal_Timer_Completion_Routine, (LPVOID)(size_t)TimerIndex, 0);
+    }
+}
+
+AK_OS_DEF void AKOS_Timer_Wait(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__timer* Timer = (akos__timer*)AKOS__Pool_Get(&Context->Timers, Handle);
+    if(Timer) WaitForSingleObject(Timer->Handle, INFINITE);
 }
 
 AK_OS_DEF akos_handle AKOS_Create_File(const char* Filepath, akos_u64 Flags)
@@ -1538,6 +1746,13 @@ AK_OS_DEF void AKOS_Delete_File(akos_handle Handle)
         //TODO(JJ): Diagnostic and error logging
         return;
     }
+    
+    akos__file* File = (akos__file*)AKOS__Pool_Get(&Context->Files, Handle);
+    if(File)
+    {
+        CloseHandle(File->Handle);
+        AKOS__Pool_Free(&Context->Files, Handle);
+    }
 }
 
 AK_OS_DEF akos_event_list AKOS_Poll_Events()
@@ -1634,6 +1849,25 @@ AK_OS_DEF void AKOS_Delete_Window(akos_handle Handle)
         User32->DestroyWindow(Window->HWND);
         AKOS__Pool_Free(&Context->Windows, Handle);
     }
+}
+
+AK_OS_DEF void* AKOS_Window_Get_Platform_Data(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, Handle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    return Window->HWND;
 }
 
 #ifdef AK_OS_VULKAN_HELPERS
