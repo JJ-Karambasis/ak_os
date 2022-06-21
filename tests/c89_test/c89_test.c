@@ -2,7 +2,7 @@
 
 int main()
 {
-    akos_context* OSContext = AKOS_Create_Context();
+    akos_context* OSContext = AKOS_Create_Context(NULL);
     if(!OSContext) return -1;
     
     akos_window_create_info WindowCreateInfo = {0};

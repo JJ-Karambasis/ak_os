@@ -15,9 +15,10 @@
 #include <stdalign.h>
 #endif
 
-
 #include <stdarg.h>
 #include <stddef.h>
+
+//TODO(JJ): Proper character code support for files and window displays?
 
 typedef unsigned char      akos_u8;
 typedef   signed char      akos_i8;
@@ -38,7 +39,16 @@ typedef akos_i32 akos_b32;
 enum 
 {
     AKOS_EVENT_TYPE_NONE,
-    AKOS_EVENT_TYPE_WINDOW_CLOSED
+    AKOS_EVENT_TYPE_WINDOW_CLOSED,
+    AKOS_EVENT_TYPE_MOUSE_MOVED,
+    AKOS_EVENT_TYPE_KEY_PRESSED, 
+    AKOS_EVENT_TYPE_KEY_RELEASED,
+    AKOS_EVENT_TYPE_MOUSE_PRESSED,
+    AKOS_EVENT_TYPE_MOUSE_RELEASED,
+    AKOS_EVENT_TYPE_MOUSE_SCROLLED, 
+    AKOS_EVENT_TYPE_CHAR_INPUT, 
+    AKOS_EVENT_TYPE_WINDOW_FOCUSED,
+    AKOS_EVENT_TYPE_MOUSE_LEFT
 };
 
 enum 
@@ -47,9 +57,171 @@ enum
     AKOS_FILE_FLAG_WRITE = (1 << 1)
 };
 
+enum 
+{
+    AKOS_GL_CONTEXT_PROFILE_MASK_CORE_BIT = (1 << 0),
+    AKOS_GL_CONTEXT_PROFILE_MASK_COMPATABILITY_BIT = (1 << 1)
+};
+
+enum
+{
+    AKOS_GL_CONTEXT_FORWARD_COMPATABILITY_BIT = (1 << 0), 
+    AKOS_GL_CONTEXT_DEBUG_BIT = (1 << 1)
+};
+
+enum
+{
+    AKOS_CURSOR_ARROW,
+    AKOS_CURSOR_IBEAM,
+    AKOS_CURSOR_SIZEALL,
+    AKOS_CURSOR_SIZENS,
+    AKOS_CURSOR_SIZEEW,
+    AKOS_CURSOR_SIZENESW,
+    AKOS_CURSOR_SIZENWSE,
+    AKOS_CURSOR_HAND,
+    AKOS_CURSOR_NO,
+    AKOS_CURSOR_COUNT
+};
+
+typedef enum akos_keycode
+{
+    AKOS_KEYCODE_UNKNOWN,
+    AKOS_KEYCODE_A,
+    AKOS_KEYCODE_B,
+    AKOS_KEYCODE_C,
+    AKOS_KEYCODE_D,
+    AKOS_KEYCODE_E,
+    AKOS_KEYCODE_F,
+    AKOS_KEYCODE_G,
+    AKOS_KEYCODE_H,
+    AKOS_KEYCODE_I,
+    AKOS_KEYCODE_J,
+    AKOS_KEYCODE_K,
+    AKOS_KEYCODE_L,
+    AKOS_KEYCODE_M,
+    AKOS_KEYCODE_N,
+    AKOS_KEYCODE_O,
+    AKOS_KEYCODE_P,
+    AKOS_KEYCODE_Q,
+    AKOS_KEYCODE_R,
+    AKOS_KEYCODE_S,
+    AKOS_KEYCODE_T,
+    AKOS_KEYCODE_U,
+    AKOS_KEYCODE_V,
+    AKOS_KEYCODE_W,
+    AKOS_KEYCODE_X,
+    AKOS_KEYCODE_Y,
+    AKOS_KEYCODE_Z,
+    AKOS_KEYCODE_0,
+    AKOS_KEYCODE_1,
+    AKOS_KEYCODE_2,
+    AKOS_KEYCODE_3,
+    AKOS_KEYCODE_4,
+    AKOS_KEYCODE_5,
+    AKOS_KEYCODE_6,
+    AKOS_KEYCODE_7,
+    AKOS_KEYCODE_8,
+    AKOS_KEYCODE_9,
+    AKOS_KEYCODE_SPACE,
+    AKOS_KEYCODE_TICK,
+    AKOS_KEYCODE_MINUS,
+    AKOS_KEYCODE_EQUAL,
+    AKOS_KEYCODE_LEFTBRACKET,
+    AKOS_KEYCODE_RIGHTBRACKET,
+    AKOS_KEYCODE_SEMICOLON,
+    AKOS_KEYCODE_QUOTE,
+    AKOS_KEYCODE_COMMA,
+    AKOS_KEYCODE_PERIOD,
+    AKOS_KEYCODE_FORWARDSLASH,
+    AKOS_KEYCODE_BACKSLASH,
+    AKOS_KEYCODE_TAB,
+    AKOS_KEYCODE_ESCAPE,
+    AKOS_KEYCODE_PAUSE,
+    AKOS_KEYCODE_UP,
+    AKOS_KEYCODE_DOWN,
+    AKOS_KEYCODE_LEFT,
+    AKOS_KEYCODE_RIGHT,
+    AKOS_KEYCODE_BACKSPACE,
+    AKOS_KEYCODE_RETURN,
+    AKOS_KEYCODE_DELETE,
+    AKOS_KEYCODE_INSERT,
+    AKOS_KEYCODE_HOME,
+    AKOS_KEYCODE_END,
+    AKOS_KEYCODE_PAGEUP,
+    AKOS_KEYCODE_PAGEDOWN,
+    AKOS_KEYCODE_CAPSLOCK,
+    AKOS_KEYCODE_NUMLOCK,
+    AKOS_KEYCODE_SCROLLLOCK,
+    AKOS_KEYCODE_SHIFT,
+    AKOS_KEYCODE_CONTROL,
+    AKOS_KEYCODE_ALT,
+    AKOS_KEYCODE_LSHIFT,
+    AKOS_KEYCODE_RSHIFT,
+    AKOS_KEYCODE_LCONTROL,
+    AKOS_KEYCODE_RCONTROL,
+    AKOS_KEYCODE_LALT,
+    AKOS_KEYCODE_RALT,
+    AKOS_KEYCODE_LSUPER,
+    AKOS_KEYCODE_RSUPER,
+    AKOS_KEYCODE_PRINTSCREEN,
+    AKOS_KEYCODE_MENU,
+    AKOS_KEYCODE_COMMAND,
+    AKOS_KEYCODE_F1,
+    AKOS_KEYCODE_F2,
+    AKOS_KEYCODE_F3,
+    AKOS_KEYCODE_F4,
+    AKOS_KEYCODE_F5,
+    AKOS_KEYCODE_F6,
+    AKOS_KEYCODE_F7,
+    AKOS_KEYCODE_F8,
+    AKOS_KEYCODE_F9,
+    AKOS_KEYCODE_F10,
+    AKOS_KEYCODE_F11,
+    AKOS_KEYCODE_F12,
+    AKOS_KEYCODE_F13,
+    AKOS_KEYCODE_F14,
+    AKOS_KEYCODE_F15,
+    AKOS_KEYCODE_F16,
+    AKOS_KEYCODE_F17,
+    AKOS_KEYCODE_F18,
+    AKOS_KEYCODE_F19,
+    AKOS_KEYCODE_F20,
+    AKOS_KEYCODE_F21,
+    AKOS_KEYCODE_F22,
+    AKOS_KEYCODE_F23,
+    AKOS_KEYCODE_F24,
+    AKOS_KEYCODE_NUMPAD0,
+    AKOS_KEYCODE_NUMPAD1,
+    AKOS_KEYCODE_NUMPAD2,
+    AKOS_KEYCODE_NUMPAD3,
+    AKOS_KEYCODE_NUMPAD4,
+    AKOS_KEYCODE_NUMPAD5,
+    AKOS_KEYCODE_NUMPAD6,
+    AKOS_KEYCODE_NUMPAD7,
+    AKOS_KEYCODE_NUMPAD8,
+    AKOS_KEYCODE_NUMPAD9,
+    AKOS_KEYCODE_NUMPADSTAR,
+    AKOS_KEYCODE_NUMPADPLUS,
+    AKOS_KEYCODE_NUMPADMINUS,
+    AKOS_KEYCODE_NUMPADDOT,
+    AKOS_KEYCODE_NUMPADSLASH
+} akos_keycode;
+
+typedef enum akos_mousecode
+{
+    AKOS_MOUSECODE_UNKNOWN,
+    AKOS_MOUSECODE_LEFT, 
+    AKOS_MOUSECODE_MIDDLE, 
+    AKOS_MOUSECODE_RIGHT
+} akos_mousecode;
+
+#define AKOS_MODIFIER_ALT 1
+#define AKOS_MODIFIER_SHIFT 2
+#define AKOS_MODIFIER_CONTROL 4
+
 typedef struct akos_context akos_context;
 typedef akos_u64 akos_handle;
-typedef int32_t akos_thread_callback(void* UserData);
+typedef akos_i32 akos_thread_callback(void* UserData);
 typedef void akos_timer_callback(void* UserData);
 
 typedef struct akos_window_create_info
@@ -63,28 +235,84 @@ typedef struct akos_event
 {
     akos_u64    Type;
     akos_handle Window;
+    
+    union
+    {
+        struct
+        {
+            akos_i32 MouseX;
+            akos_i32 MouseY;
+        } MouseMoved;
+        
+        struct
+        {
+            akos_keycode KeyCode;
+            akos_u32     Modifiers;
+            akos_u32     ScanCode;
+        } KeyPressed, KeyReleased;
+        
+        struct 
+        {
+            akos_mousecode MouseCode;
+            akos_u32       Modifiers;
+        } MousePressed, MouseReleased;
+        
+        struct
+        {
+            float Scroll;
+        } MouseScroll;
+        
+        struct
+        {
+            akos_i32 IsFocused;
+        } Focused;
+        
+        struct
+        {
+            akos_u16 Code;
+        } CharInput;
+    };
 } akos_event;
 
 typedef struct akos_event_list
 {
     akos_u64          Count;
     const akos_event* Events;
-} akos_event_list;
+}  akos_event_list;
+
+typedef struct akos_clipboard_text
+{
+    akos_u64    Length;
+    const char* Str;
+} akos_clipboard_text;
+
+typedef struct akos_gl_context_create_info
+{
+    akos_u16 MajorVersion;
+    akos_u16 MinorVersion;
+    akos_u32 ProfileMask;
+    akos_u32 ContextFlags;
+} akos_gl_context_create_info;
+
+typedef struct akos_context_create_info
+{
+    akos_gl_context_create_info GLInfo;
+} akos_context_create_info;
 
 AK_OS_DEF void* AKOS_Reserve(size_t Size);
-AK_OS_DEF bool  AKOS_Commit(void* Memory, size_t Size);
+AK_OS_DEF int   AKOS_Commit(void* Memory, size_t Size);
 AK_OS_DEF void  AKOS_Decommit(void* Memory, size_t Size);
 AK_OS_DEF void  AKOS_Release(void* Memory);
 
 AK_OS_DEF void* AKOS_Allocate(size_t Size);
 AK_OS_DEF void  AKOS_Free(void* Memory);
 
-AK_OS_DEF uint32_t AKOS_Get_Current_Thread_ID();
+AK_OS_DEF akos_u32 AKOS_Get_Current_Thread_ID();
 
-AK_OS_DEF bool AKOS_Directory_Exists(const char* Directory);
-AK_OS_DEF bool AKOS_Create_Directory(const char* Directory);
+AK_OS_DEF int AKOS_Directory_Exists(const char* Directory);
+AK_OS_DEF int AKOS_Create_Directory(const char* Directory);
 
-AK_OS_DEF akos_context* AKOS_Create_Context();
+AK_OS_DEF akos_context* AKOS_Create_Context(const akos_context_create_info* ContextCreateInfo);
 AK_OS_DEF void          AKOS_Delete_Context(akos_context* Context);
 AK_OS_DEF akos_context* AKOS_Get_Context();
 AK_OS_DEF void          AKOS_Set_Context(akos_context* Context);
@@ -108,22 +336,54 @@ AK_OS_DEF void AKOS_Event_Wait(akos_handle Handle);
 
 AK_OS_DEF akos_handle AKOS_Create_Timer();
 AK_OS_DEF void AKOS_Delete_Timer(akos_handle Handle);
-AK_OS_DEF void AKOS_Timer_Set(akos_handle Handle, uint64_t Ticks, akos_timer_callback* TimerCallback, void* UserData);
+AK_OS_DEF void AKOS_Timer_Set(akos_handle Handle, akos_u64 Ticks, akos_timer_callback* TimerCallback, void* UserData);
 AK_OS_DEF void AKOS_Timer_Wait(akos_handle Handle);
 
 AK_OS_DEF akos_handle AKOS_Create_File(const char* Filepath, akos_u64 Flags);
 AK_OS_DEF akos_u64 AKOS_Get_File_Size(akos_handle Handle);
-AK_OS_DEF bool AKOS_Read_File( akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset);
-AK_OS_DEF bool AKOS_Write_File(akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset);
+AK_OS_DEF int AKOS_Read_File( akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset);
+AK_OS_DEF int AKOS_Write_File(akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset);
 AK_OS_DEF void AKOS_Delete_File(akos_handle Handle);
 
-AK_OS_DEF bool AKOS_Write_Entire_File(const char* Filepath, void* Data, akos_u32 WriteSize);
+AK_OS_DEF int AKOS_Write_Entire_File(const char* Filepath, void* Data, akos_u32 WriteSize);
 
 AK_OS_DEF akos_event_list AKOS_Poll_Events();
+
+AK_OS_DEF const char* AKOS_Get_Clipboard_Text();
+AK_OS_DEF void AKOS_Set_Clipboard_Text(const char* Text);
 
 AK_OS_DEF akos_handle AKOS_Create_Window(const akos_window_create_info* WindowCreateInfo);
 AK_OS_DEF void AKOS_Delete_Window(akos_handle WindowHandle);
 AK_OS_DEF void* AKOS_Window_Get_Platform_Data(akos_handle WindowHandle);
+
+AK_OS_DEF void AKOS_Show_Window(akos_handle WindowHandle, int IsFocused);
+AK_OS_DEF void AKOS_Set_Window_Pos(akos_handle WindowHandle, akos_i32 PosX, akos_i32 PosY);
+AK_OS_DEF void AKOS_Get_Window_Pos(akos_handle WindowHandle, akos_i32* PosX, akos_i32* PosY);
+AK_OS_DEF void AKOS_Set_Window_Dim(akos_handle WindowHandle, akos_i32 Width, akos_i32 Height);
+AK_OS_DEF void AKOS_Get_Window_Dim(akos_handle WindowHandle, akos_i32* Width, akos_i32* Height);
+AK_OS_DEF void AKOS_Set_Window_User_Data(akos_handle WindowHandle, akos_u64 UserData);
+AK_OS_DEF akos_u64 AKOS_Get_Window_User_Data(akos_handle WindowHandle);
+
+AK_OS_DEF int AKOS_Is_Window_Focused(akos_handle WindowHandle);
+AK_OS_DEF void AKOS_Focus_Window(akos_handle WindowHandle);
+AK_OS_DEF int AKOS_Is_Window_Minimized(akos_handle WindowHandle);
+AK_OS_DEF akos_handle AKOS_Get_Focused_Window();
+AK_OS_DEF void AKOS_Get_Cursor_Pos(akos_i32* PosX, akos_i32* PosY);
+AK_OS_DEF void AKOS_Get_Window_Cursor_Pos(akos_handle WindowHandle, akos_i32* PosX, akos_i32* PosY);
+AK_OS_DEF void AKOS_Set_Cursor_Pos(akos_i32 PosX, akos_i32 PosY);
+AK_OS_DEF void AKOS_Set_Window_Cursor_Pos(akos_handle WindowHandle, akos_i32 PosX, akos_i32 PosY);
+AK_OS_DEF void AKOS_Set_Mouse_Capture(akos_handle WindowHandle);
+AK_OS_DEF akos_handle AKOS_Get_Mouse_Capture();
+
+AK_OS_DEF int AKOS_GL_Make_Current(akos_handle WindowHandle);
+AK_OS_DEF void AKOS_GL_Set_Swap_Interval(int SwapInterval);
+AK_OS_DEF void AKOS_GL_Swap_Buffers(akos_handle WindowHandle);
+
+AK_OS_DEF akos_handle AKOS_Create_Cursor(akos_u32 SystemCode);
+AK_OS_DEF void  AKOS_Delete_Cursor(akos_handle Cursor);
+AK_OS_DEF void AKOS_Set_Cursor(akos_handle Cursor);
+AK_OS_DEF akos_handle AKOS_Get_Cursor();
+AK_OS_DEF void AKOS_Show_Cursor(int Show);
 
 #ifdef AK_OS_VULKAN_HELPERS
 
@@ -152,6 +412,7 @@ AK_OS_DEF VkSurfaceKHR AKOS_Create_Vulkan_Surface(akos_handle WindowHandle, VkIn
 #define AKOS__HANDLE_TYPE_FILE   4
 #define AKOS__HANDLE_TYPE_EVENT  5
 #define AKOS__HANDLE_TYPE_TIMER  6
+#define AKOS__HANDLE_TYPE_CURSOR 7
 
 #ifndef AK_OS_MALLOC
 #include <stdlib.h>
@@ -259,6 +520,13 @@ static akos_u64 AKOS__Ceil_Pow2(akos_u64 V)
     ++V;
     V += ( V == 0 );    
     return V;
+}
+
+static akos_u64 AKOS__String_Length(const char* Str)
+{
+    akos_u64 Length = 0;
+    while(*Str++) Length++;
+    return Length;
 }
 
 //~Internal pool implementation
@@ -931,6 +1199,12 @@ akos_event_list AKOS__Get_Event_List(akos__event_manager* EventManager)
     return Result;
 }
 
+typedef struct akos__clipboard
+{
+    akos_u64 TextLength;
+    char* Str;
+} akos__clipboard;
+
 //~Internal win32 implementation
 #ifdef _WIN32
 
@@ -949,6 +1223,41 @@ return akos_false; \
 } \
 } while(0)
 
+#define AKOS__GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#define AKOS__GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
+
+#define AKOS__WGL_CONTEXT_MAJOR_VERSION_ARB           0x2091
+#define AKOS__WGL_CONTEXT_MINOR_VERSION_ARB           0x2092
+#define AKOS__WGL_CONTEXT_LAYER_PLANE_ARB             0x2093
+#define AKOS__WGL_CONTEXT_FLAGS_ARB                   0x2094
+#define AKOS__WGL_CONTEXT_PROFILE_MASK_ARB            0x9126
+
+#define AKOS__WGL_CONTEXT_DEBUG_BIT_ARB               0x0001
+#define AKOS__WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB  0x0002
+
+#define AKOS__WGL_CONTEXT_CORE_PROFILE_BIT_ARB        0x00000001
+#define AKOS__WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB 0x00000002
+
+#define AKOS__WGL_DRAW_TO_WINDOW_ARB                  0x2001
+#define AKOS__WGL_ACCELERATION_ARB                    0x2003
+#define AKOS__WGL_SUPPORT_OPENGL_ARB                  0x2010
+#define AKOS__WGL_DOUBLE_BUFFER_ARB                   0x2011
+#define AKOS__WGL_PIXEL_TYPE_ARB                      0x2013
+
+#define AKOS__WGL_TYPE_RGBA_ARB                       0x202B
+#define AKOS__WGL_FULL_ACCELERATION_ARB               0x2027
+
+#define AKOS__WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB        0x20A9
+
+#define AKOS__WGL_COLOR_BITS_ARB                      0x2014
+#define AKOS__WGL_RED_BITS_ARB                        0x2015
+#define AKOS__WGL_GREEN_BITS_ARB                      0x2017
+#define AKOS__WGL_BLUE_BITS_ARB                       0x2019
+#define AKOS__WGL_ALPHA_BITS_ARB                      0x201B
+#define AKOS__WGL_DEPTH_BITS_ARB                      0x2022
+#define AKOS__WGL_STENCIL_BITS_ARB                    0x2023
+
+//~User32 functions
 typedef ATOM akos__RegisterClassExA(WNDCLASSEX* unnamedParam1);
 typedef BOOL akos__GetClassInfoExA(HINSTANCE hInstance, LPCSTR lpClassName, LPWNDCLASSEXA lpwcx);
 typedef BOOL akos__UnregisterClassA(LPCSTR lpClassName, HINSTANCE hInstance);
@@ -962,6 +1271,33 @@ typedef void akos__PostQuitMessage(int nExitCode);
 typedef BOOL akos__TranslateMessage(const MSG* lpMsg);
 typedef LRESULT akos__DispatchMessageA(const MSG* lpMsg);
 typedef BOOL akos__PeekMessageA(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
+typedef BOOL akos__OpenClipboard(HWND hWndNewOwnder);
+typedef HANDLE akos__GetClipboardData(UINT uFormat);
+typedef HANDLE akos__SetClipboardData(UINT uFormat, HANDLE hMem);
+typedef BOOL akos__EmptyClipboard();
+typedef BOOL akos__CloseClipboard();
+typedef HCURSOR akos__LoadCursorA(HINSTANCE Instance, LPCSTR CursorName);
+typedef BOOL akos__DestroyCursor(HCURSOR Cursor);
+typedef HCURSOR akos__SetCursor(HCURSOR hCursor);
+typedef int akos__ShowCursor(BOOL bShow);
+typedef HWND akos__GetForegroundWindow();
+typedef BOOL akos__BringWindowToTop(HWND Window);
+typedef BOOL akos__SetForegroundWindow(HWND Window);
+typedef HWND akos__SetFocus(HWND Window);
+typedef BOOL akos__IsIconic(HWND Window);
+typedef BOOL akos__SetCursorPos(int x, int y);
+typedef BOOL akos__GetCursorPos(LPPOINT Point);
+typedef BOOL akos__ScreenToClient(HWND Window, LPPOINT lpPoint);
+typedef HWND akos__SetCapture(HWND Window);
+typedef BOOL akos__ReleaseCapture();
+typedef BOOL akos__ClientToScreen(HWND Window, LPPOINT lpPoint);
+typedef HWND akos__GetCapture();
+typedef DWORD akos__GetWindowThreadProcessId(HWND Window, LPDWORD lpdwProcessId);
+typedef BOOL akos__ShowWindow(HWND Window, int nCmdShow);
+typedef BOOL akos__SetWindowPos(HWND Window, HWND InsertAfter, int X, int Y, int cx, int cy, UINT uFlags);
+typedef BOOL akos__GetClientRect(HWND Window, LPRECT lpRect);
+typedef HDC akos__GetDC(HWND Window);
+typedef int akos__ReleaseDC(HWND Window, HDC hDC);
 
 typedef struct akos__user32
 {
@@ -979,11 +1315,86 @@ typedef struct akos__user32
     akos__PeekMessageA* PeekMessageA;
     akos__TranslateMessage* TranslateMessage;
     akos__DispatchMessageA* DispatchMessageA;
+    akos__OpenClipboard* OpenClipboard;
+    akos__GetClipboardData* GetClipboardData;
+    akos__SetClipboardData* SetClipboardData;
+    akos__EmptyClipboard* EmptyClipboard;
+    akos__CloseClipboard* CloseClipboard;
+    akos__LoadCursorA* LoadCursorA;
+    akos__DestroyCursor* DestroyCursor;
+    akos__SetCursor* SetCursor;
+    akos__ShowCursor* ShowCursor;
+    akos__GetForegroundWindow* GetForegroundWindow;
+    akos__BringWindowToTop* BringWindowToTop;
+    akos__SetForegroundWindow* SetForegroundWindow;
+    akos__SetFocus* SetFocus;
+    akos__IsIconic* IsIconic;
+    akos__SetCursorPos* SetCursorPos;
+    akos__GetCursorPos* GetCursorPos;
+    akos__ScreenToClient* ScreenToClient;
+    akos__SetCapture* SetCapture;
+    akos__ReleaseCapture* ReleaseCapture;
+    akos__ClientToScreen* ClientToScreen;
+    akos__GetCapture* GetCapture;
+    akos__GetWindowThreadProcessId* GetWindowThreadProcessId;
+    akos__ShowWindow* ShowWindow;
+    akos__SetWindowPos* SetWindowPos;
+    akos__GetClientRect* GetClientRect;
+    akos__GetDC* GetDC;
+    akos__ReleaseDC* ReleaseDC;
 } akos__user32;
+
+//~GDI32 functions
+
+typedef int akos__ChoosePixelFormat(HDC hdc, CONST PIXELFORMATDESCRIPTOR* ppfd);
+typedef int akos__DescribePixelFormat(HDC hdc, int iPixelFormat, UINT nBytes, PIXELFORMATDESCRIPTOR* ppfd);
+typedef BOOL akos__SetPixelFormat(HDC hdc, int iPixelFormat, CONST PIXELFORMATDESCRIPTOR* ppfd);
+typedef BOOL akos__SwapBuffers(HDC hdc);
+
+typedef struct akos__gdi32
+{
+    HMODULE Library;
+    akos__ChoosePixelFormat*   ChoosePixelFormat;
+    akos__DescribePixelFormat* DescribePixelFormat;
+    akos__SetPixelFormat*      SetPixelFormat;
+    akos__SwapBuffers*         SwapBuffers;
+} akos__gdi32;
+
+typedef HGLRC akos__wglCreateContext(HDC DeviceContext);
+typedef PROC akos__wglGetProcAddress(LPCSTR Proc);
+typedef BOOL akos__wglMakeCurrent(HDC DeviceContext, HGLRC RenderContext);
+typedef BOOL akos__wglDeleteContext(HGLRC RenderContext);
+
+typedef struct akos__opengl32
+{
+    HMODULE Library;
+    akos__wglCreateContext*  wglCreateContext;
+    akos__wglGetProcAddress* wglGetProcAddress;
+    akos__wglMakeCurrent*    wglMakeCurrent;
+    akos__wglDeleteContext*  wglDeleteContext;
+} akos__opengl32;
+
+typedef BOOL akos__wglChoosePixelFormatARB(HDC hdc, const int* piAttribIList, const FLOAT* pfAttribFList, UINT nMaxFormats, int* piFormats, UINT* nNumFormats);
+typedef HGLRC akos__wglCreateContextAttribsARB(HDC hdc, HGLRC hShareContext, const int* attribList);
+typedef const char* akos__wglGetExtensionsStringARB(HDC hdc);
+typedef BOOL akos__wglSwapIntervalEXT(int Interval);
+
+typedef struct akos__wgl
+{
+    akos__wglChoosePixelFormatARB* wglChoosePixelFormatARB;
+    akos__wglCreateContextAttribsARB* wglCreateContextAttribsARB;
+    akos__wglGetExtensionsStringARB* wglGetExtensionsStringARB;
+    akos__wglSwapIntervalEXT* wglSwapIntervalEXT;
+} akos__wgl;
 
 typedef struct akos__window
 {
-    HWND HWND;
+    HWND  HWND;
+    DWORD Style;
+    DWORD ExStyle;
+    akos_u64 UserData;
+    HDC   DeviceContext;
+    HGLRC RenderContext;
 } akos__window;
 
 typedef struct akos__thread
@@ -1015,11 +1426,19 @@ typedef struct akos__timer
     void* UserData;
 } akos__timer;
 
+typedef struct akos__cursor
+{
+    HCURSOR Handle;
+} akos__cursor;
+
 typedef struct akos_context
 {
     akos__arena PermanentStorage;
     akos__arena TransientStorage;
-    akos__user32 User32;
+    akos__user32   User32;
+    akos__gdi32    GDI32;
+    akos__opengl32 OpenGL32;
+    akos__wgl      WGL;
     
     akos__pool Windows;
     akos__pool Threads;
@@ -1027,8 +1446,14 @@ typedef struct akos_context
     akos__pool Files;
     akos__pool Events;
     akos__pool Timers;
+    akos__pool Cursors;
+    
+    akos_handle SetCursorHandle;
+    
+    int WGLAttributes[9];
     
     akos__event_manager EventManager;
+    akos__clipboard Clipboard;
 } akos_context;
 
 AK_OS_DEF void* AKOS_Reserve(size_t Size)
@@ -1037,9 +1462,9 @@ AK_OS_DEF void* AKOS_Reserve(size_t Size)
     return Result;
 }
 
-AK_OS_DEF bool  AKOS_Commit(void* Memory, size_t Size)
+AK_OS_DEF int  AKOS_Commit(void* Memory, size_t Size)
 {
-    bool Result = VirtualAlloc(Memory, Size, MEM_COMMIT, PAGE_READWRITE) != NULL;
+    int Result = VirtualAlloc(Memory, Size, MEM_COMMIT, PAGE_READWRITE) != NULL;
     return Result;
 }
 
@@ -1053,18 +1478,18 @@ AK_OS_DEF void  AKOS_Release(void* Memory)
     VirtualFree(Memory, 0, MEM_RELEASE);
 }
 
-AK_OS_DEF uint32_t AKOS_Get_Current_Thread_ID()
+AK_OS_DEF akos_u32 AKOS_Get_Current_Thread_ID()
 {
     return GetCurrentThreadId();
 }
 
-AK_OS_DEF bool AKOS_Directory_Exists(const char* Directory)
+AK_OS_DEF int AKOS_Directory_Exists(const char* Directory)
 {
     DWORD Attrib = GetFileAttributes(Directory);
     return (Attrib != INVALID_FILE_ATTRIBUTES && Attrib & FILE_ATTRIBUTE_DIRECTORY);
 }
 
-AK_OS_DEF bool AKOS_Create_Directory(const char* Directory)
+AK_OS_DEF int AKOS_Create_Directory(const char* Directory)
 {
     return CreateDirectoryA(Directory, NULL);
 }
@@ -1108,6 +1533,28 @@ static LRESULT CALLBACK AKOS__Win32_Default_Window_Proc(HWND Window, UINT Messag
             Event.Window = AKOS__Win32_Get_Handle_From_HWND(Window);
         } break;
         
+        case WM_SETFOCUS:
+        {
+            Event.Type = AKOS_EVENT_TYPE_WINDOW_FOCUSED;
+            Event.Focused.IsFocused = akos_true;
+        } break;
+        
+        case WM_KILLFOCUS:
+        {
+            Event.Type = AKOS_EVENT_TYPE_WINDOW_FOCUSED;
+            Event.Focused.IsFocused = akos_false;
+        } break;
+        
+        case WM_CHAR:
+        case WM_SYSCHAR:
+        {
+            if(WParam > 0 && WParam < 0x10000)
+            {
+                Event.Type = AKOS_EVENT_TYPE_CHAR_INPUT;
+                Event.CharInput.Code = (akos_u16)WParam;
+            }
+        } break;
+        
         default:
         {
             Result = User32->DefWindowProcA(Window, Message, WParam, LParam);
@@ -1143,6 +1590,59 @@ akos_b32 AKOS__Win32_Init_Libraries(akos_context* Context)
     AKOS__Win32_LoadProc(User32, PeekMessageA);
     AKOS__Win32_LoadProc(User32, TranslateMessage);
     AKOS__Win32_LoadProc(User32, DispatchMessageA);
+    AKOS__Win32_LoadProc(User32, OpenClipboard);
+    AKOS__Win32_LoadProc(User32, GetClipboardData);
+    AKOS__Win32_LoadProc(User32, SetClipboardData);
+    AKOS__Win32_LoadProc(User32, EmptyClipboard);
+    AKOS__Win32_LoadProc(User32, CloseClipboard);
+    AKOS__Win32_LoadProc(User32, LoadCursorA);
+    AKOS__Win32_LoadProc(User32, DestroyCursor);
+    AKOS__Win32_LoadProc(User32, SetCursor);
+    AKOS__Win32_LoadProc(User32, ShowCursor);
+    AKOS__Win32_LoadProc(User32, GetForegroundWindow);
+    AKOS__Win32_LoadProc(User32, BringWindowToTop);
+    AKOS__Win32_LoadProc(User32, SetForegroundWindow);
+    AKOS__Win32_LoadProc(User32, SetFocus);
+    AKOS__Win32_LoadProc(User32, IsIconic);
+    AKOS__Win32_LoadProc(User32, SetCursorPos);
+    AKOS__Win32_LoadProc(User32, GetCursorPos);
+    AKOS__Win32_LoadProc(User32, ScreenToClient);
+    AKOS__Win32_LoadProc(User32, SetCapture);
+    AKOS__Win32_LoadProc(User32, ReleaseCapture);
+    AKOS__Win32_LoadProc(User32, ClientToScreen);
+    AKOS__Win32_LoadProc(User32, GetCapture);
+    AKOS__Win32_LoadProc(User32, GetWindowThreadProcessId);
+    AKOS__Win32_LoadProc(User32, ShowWindow);
+    AKOS__Win32_LoadProc(User32, SetWindowPos);
+    AKOS__Win32_LoadProc(User32, GetClientRect);
+    AKOS__Win32_LoadProc(User32, GetDC);
+    AKOS__Win32_LoadProc(User32, ReleaseDC);
+    
+    akos__gdi32* GDI32 = &Context->GDI32;
+    GDI32->Library = LoadLibrary("GDI32.dll");
+    if(!GDI32->Library)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    AKOS__Win32_LoadProc(GDI32, ChoosePixelFormat);
+    AKOS__Win32_LoadProc(GDI32, DescribePixelFormat);
+    AKOS__Win32_LoadProc(GDI32, SetPixelFormat);
+    AKOS__Win32_LoadProc(GDI32, SwapBuffers);
+    
+    akos__opengl32* OpenGL32 = &Context->OpenGL32;
+    OpenGL32->Library = LoadLibrary("opengl32.dll");
+    if(!OpenGL32->Library)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    AKOS__Win32_LoadProc(OpenGL32, wglCreateContext);
+    AKOS__Win32_LoadProc(OpenGL32, wglGetProcAddress);
+    AKOS__Win32_LoadProc(OpenGL32, wglMakeCurrent);
+    AKOS__Win32_LoadProc(OpenGL32, wglDeleteContext);
     
     return akos_true;
 }
@@ -1165,7 +1665,96 @@ akos_b32 AKOS__Register_Window_Classes(akos_context* Context)
     return akos_true;
 }
 
-AK_OS_DEF akos_context* AKOS_Create_Context()
+akos_b32 AKOS__Init_WGL(akos_context* Context)
+{
+    akos__user32* User32 = &Context->User32;
+    akos__gdi32* GDI32 = &Context->GDI32;
+    akos__opengl32* OpenGL32 = &Context->OpenGL32;
+    
+    HWND DummyWindow = User32->CreateWindowExA(0, AKOS__WINDOW_CLASS_NAME, "Temp", 0, 0, 0, 0, 0, NULL, NULL, GetModuleHandle(0), NULL);
+    if(!DummyWindow)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    HDC DeviceContext = User32->GetDC(DummyWindow);
+    if(!DeviceContext)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        User32->DestroyWindow(DummyWindow);
+        return akos_false;
+    }
+    
+    
+    PIXELFORMATDESCRIPTOR TargetPixelFormat = {};
+    TargetPixelFormat.nSize = sizeof(TargetPixelFormat);
+    TargetPixelFormat.nVersion = 1;
+    TargetPixelFormat.iPixelType = PFD_TYPE_RGBA;
+    TargetPixelFormat.dwFlags = PFD_SUPPORT_OPENGL|PFD_DRAW_TO_WINDOW|PFD_DOUBLEBUFFER;
+    TargetPixelFormat.cColorBits =  32;
+    TargetPixelFormat.iLayerType = PFD_MAIN_PLANE;
+    
+    int TargetPixelFormatIndex = GDI32->ChoosePixelFormat(DeviceContext, &TargetPixelFormat);
+    
+    PIXELFORMATDESCRIPTOR PixelFormat;
+    if(!GDI32->DescribePixelFormat(DeviceContext, TargetPixelFormatIndex, sizeof(PixelFormat), 
+                                   &PixelFormat))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        User32->ReleaseDC(DummyWindow, DeviceContext);
+        User32->DestroyWindow(DummyWindow);
+        return akos_false;
+    }
+    
+    if(!GDI32->SetPixelFormat(DeviceContext, TargetPixelFormatIndex, &PixelFormat))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        User32->ReleaseDC(DummyWindow, DeviceContext);
+        User32->DestroyWindow(DummyWindow);
+        return akos_false;
+    }
+    
+    HGLRC RenderContext = OpenGL32->wglCreateContext(DeviceContext);
+    if(!RenderContext)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        User32->ReleaseDC(DummyWindow, DeviceContext);
+        User32->DestroyWindow(DummyWindow);
+        return akos_false;
+    }
+    
+    if(!OpenGL32->wglMakeCurrent(DeviceContext, RenderContext))
+    {
+        //TODO(JJ): diagnostic and error logging
+        OpenGL32->wglDeleteContext(RenderContext);
+        User32->ReleaseDC(DummyWindow, DeviceContext);
+        User32->DestroyWindow(DummyWindow);
+        return akos_false;
+    }
+    
+    akos__wgl* WGL = &Context->WGL;
+    WGL->wglChoosePixelFormatARB = (akos__wglChoosePixelFormatARB*)OpenGL32->wglGetProcAddress("wglChoosePixelFormatARB");
+    WGL->wglCreateContextAttribsARB = (akos__wglCreateContextAttribsARB*)OpenGL32->wglGetProcAddress("wglCreateContextAttribsARB");
+    WGL->wglGetExtensionsStringARB = (akos__wglGetExtensionsStringARB*)OpenGL32->wglGetProcAddress("wglGetExtensionsStringARB");
+    WGL->wglSwapIntervalEXT = (akos__wglSwapIntervalEXT*)OpenGL32->wglGetProcAddress("wglSwapIntervalEXT");
+    
+    int Result = (WGL->wglChoosePixelFormatARB && WGL->wglCreateContextAttribsARB &&
+                  WGL->wglGetExtensionsStringARB && WGL->wglSwapIntervalEXT);
+    if(!Result)
+    {
+        //TODO(JJ): Diagnostic and error logging
+    }
+    
+    OpenGL32->wglMakeCurrent(NULL, NULL);
+    OpenGL32->wglDeleteContext(RenderContext);
+    User32->ReleaseDC(DummyWindow, DeviceContext);
+    User32->DestroyWindow(DummyWindow);
+    
+    return akos_true;
+}
+
+AK_OS_DEF akos_context* AKOS_Create_Context(const akos_context_create_info* ContextCreateInfo)
 {
     akos__arena ContextArena = AKOS__Create_Arena(1024*1024);
     akos_context* Context = AKOS__Push_Struct(&ContextArena, akos_context);
@@ -1176,6 +1765,7 @@ AK_OS_DEF akos_context* AKOS_Create_Context()
         return NULL;
     }
     
+    AKOS_Set_Context(Context);
     Context->PermanentStorage = ContextArena;
     
     if(!AKOS__Win32_Init_Libraries(Context))
@@ -1232,6 +1822,50 @@ AK_OS_DEF akos_context* AKOS_Create_Context()
         goto error;
     }
     
+    Context->Cursors = AKOS__Create_Pool(64, sizeof(akos__cursor), AKOS__HANDLE_TYPE_CURSOR);
+    if(!Context->Cursors.Data)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
+    
+    if(!AKOS__Init_WGL(Context))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        goto error;
+    }
+    
+    if(ContextCreateInfo)
+    {
+        const akos_gl_context_create_info* GLInfo = &ContextCreateInfo->GLInfo;
+        
+        int ContextFlags = 0;
+        if(GLInfo->ContextFlags & AKOS_GL_CONTEXT_FORWARD_COMPATABILITY_BIT)
+            ContextFlags |= AKOS__WGL_CONTEXT_FORWARD_COMPATIBLE_BIT_ARB;
+        
+        if(GLInfo->ContextFlags & AKOS_GL_CONTEXT_DEBUG_BIT)
+            ContextFlags |= AKOS__WGL_CONTEXT_DEBUG_BIT_ARB;
+        
+        int ProfileMask = 0;
+        if(GLInfo->ProfileMask & AKOS_GL_CONTEXT_PROFILE_MASK_COMPATABILITY_BIT)
+            ProfileMask |= AKOS__WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB;
+        
+        if(GLInfo->ProfileMask & AKOS_GL_CONTEXT_PROFILE_MASK_CORE_BIT)
+            ProfileMask |= AKOS__WGL_CONTEXT_CORE_PROFILE_BIT_ARB;
+        
+        int Attributes[] = 
+        {
+            AKOS__WGL_CONTEXT_MAJOR_VERSION_ARB, GLInfo->MajorVersion, 
+            AKOS__WGL_CONTEXT_MINOR_VERSION_ARB, GLInfo->MinorVersion,
+            AKOS__WGL_CONTEXT_FLAGS_ARB, ContextFlags, 
+            AKOS__WGL_CONTEXT_PROFILE_MASK_ARB, ProfileMask, 
+            0
+        };
+        
+        AKOS__Memory_Copy(Context->WGLAttributes, Attributes, sizeof(Attributes));
+    }
+    
     Context->EventManager = AKOS__Create_Event_Manager();
     if(!Context->EventManager.EventBuffers[0].Capacity)
     {
@@ -1245,11 +1879,11 @@ AK_OS_DEF akos_context* AKOS_Create_Context()
         goto error;
     }
     
-    AKOS_Set_Context(Context);
     return Context;
     
     error:
     AKOS_Delete_Context(Context);
+    AKOS_Set_Context(NULL);
     return NULL;
 }
 
@@ -1519,7 +2153,7 @@ void AKOS__Win32_Internal_Timer_Completion_Routine(LPVOID UserData, DWORD Low, D
     if(Timer && Timer->Callback) Timer->Callback(Timer->UserData);
 }
 
-AK_OS_DEF void AKOS_Timer_Set(akos_handle Handle, uint64_t TicksToWait, akos_timer_callback* TimerCallback, void* UserData)
+AK_OS_DEF void AKOS_Timer_Set(akos_handle Handle, akos_u64 TicksToWait, akos_timer_callback* TimerCallback, void* UserData)
 {
     akos_context* Context = AKOS_Get_Context();
     if(!Context) 
@@ -1533,12 +2167,12 @@ AK_OS_DEF void AKOS_Timer_Set(akos_handle Handle, uint64_t TicksToWait, akos_tim
     {
         Timer->Callback = TimerCallback;
         Timer->UserData = UserData;
-        uint64_t TicksPerHundredSecond = AKOS_Performance_Frequency()/10000000;
+        akos_u64 TicksPerHundredSecond = AKOS_Performance_Frequency()/10000000;
         
         akos_u16 TimerIndex = (akos_u16)Handle;
         
         LARGE_INTEGER TimerValue;
-        TimerValue.QuadPart = -((int64_t)TicksToWait/(int64_t)TicksPerHundredSecond);
+        TimerValue.QuadPart = -((akos_i64)TicksToWait/(akos_i64)TicksPerHundredSecond);
         SetWaitableTimer(Timer->Handle, &TimerValue, 0, AKOS__Win32_Internal_Timer_Completion_Routine, (LPVOID)(size_t)TimerIndex, 0);
     }
 }
@@ -1568,7 +2202,7 @@ AK_OS_DEF akos_handle AKOS_Create_File(const char* Filepath, akos_u64 Flags)
     DWORD DesiredAttributes   = 0;
     DWORD CreationDisposition = 0;
     
-    int32_t ReadAndWrite = Flags == (AKOS_FILE_FLAG_READ|AKOS_FILE_FLAG_WRITE);
+    akos_i32 ReadAndWrite = Flags == (AKOS_FILE_FLAG_READ|AKOS_FILE_FLAG_WRITE);
     if(ReadAndWrite)
     {
         DesiredAttributes = GENERIC_READ|GENERIC_WRITE;
@@ -1642,26 +2276,26 @@ AK_OS_DEF akos_u64 AKOS_Get_File_Size(akos_handle Handle)
     return FileSize.QuadPart;
 }
 
-AK_OS_DEF bool AKOS_Read_File(akos_handle Handle,  void* Data, akos_u32 DataSize, akos_u64 Offset)
+AK_OS_DEF int AKOS_Read_File(akos_handle Handle,  void* Data, akos_u32 DataSize, akos_u64 Offset)
 {
     akos_context* Context = AKOS_Get_Context();
     if(!Context) 
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     akos__file* File = (akos__file*)AKOS__Pool_Get(&Context->Files, Handle);
     if(!File)
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     if(!(File->Flags & AKOS_FILE_FLAG_READ))
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     
@@ -1678,38 +2312,38 @@ AK_OS_DEF bool AKOS_Read_File(akos_handle Handle,  void* Data, akos_u32 DataSize
     if(!ReadFile(File->Handle, Data, DataSize, &BytesRead, POverlappedOffset))
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     if(BytesRead != DataSize)
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
-    return true;
+    return akos_true;
 }
 
-AK_OS_DEF bool AKOS_Write_File(akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset)
+AK_OS_DEF int AKOS_Write_File(akos_handle Handle, void* Data, akos_u32 DataSize, akos_u64 Offset)
 {
     akos_context* Context = AKOS_Get_Context();
     if(!Context) 
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     akos__file* File = (akos__file*)AKOS__Pool_Get(&Context->Files, Handle);
     if(!File)
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     if(!(File->Flags & AKOS_FILE_FLAG_WRITE))
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     
@@ -1726,16 +2360,16 @@ AK_OS_DEF bool AKOS_Write_File(akos_handle Handle, void* Data, akos_u32 DataSize
     if(!WriteFile(File->Handle, Data, DataSize, &BytesWritten, POverlappedOffset))
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
     if(BytesWritten != DataSize)
     {
         //TODO(JJ): Diagnostic and error logging
-        return false;
+        return akos_false;
     }
     
-    return true;
+    return akos_true;
 }
 
 AK_OS_DEF void AKOS_Delete_File(akos_handle Handle)
@@ -1755,6 +2389,529 @@ AK_OS_DEF void AKOS_Delete_File(akos_handle Handle)
     }
 }
 
+static akos_mousecode AKOS__Mouse_Event_To_AKOS(DWORD Event)
+{
+    akos_mousecode Result = AKOS_MOUSECODE_UNKNOWN;
+    
+    switch(Event)
+    {
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        Result = AKOS_MOUSECODE_LEFT;
+        break;
+        
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        Result = AKOS_MOUSECODE_RIGHT;
+        break;
+        
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP:
+        Result = AKOS_MOUSECODE_MIDDLE;
+        break;
+    }
+    
+    return Result;
+}
+
+static akos_keycode AKOS__VK_To_AKOS(DWORD KeyCode)
+{
+    akos_keycode Result = AKOS_KEYCODE_UNKNOWN;
+    switch(KeyCode)
+    {
+        case 'A':
+        Result = AKOS_KEYCODE_A;
+        break;
+        
+        case 'B':
+        Result = AKOS_KEYCODE_B;
+        break;
+        
+        case 'C':
+        Result = AKOS_KEYCODE_C;
+        break;
+        
+        case 'D':
+        Result = AKOS_KEYCODE_D;
+        break;
+        
+        case 'E':
+        Result = AKOS_KEYCODE_E;
+        break;
+        
+        case 'F':
+        Result = AKOS_KEYCODE_F;
+        break;
+        
+        case 'G':
+        Result = AKOS_KEYCODE_G;
+        break;
+        
+        case 'H':
+        Result = AKOS_KEYCODE_H;
+        break;
+        
+        case 'I':
+        Result = AKOS_KEYCODE_I;
+        break;
+        
+        case 'J':
+        Result = AKOS_KEYCODE_J;
+        break;
+        
+        case 'K':
+        Result = AKOS_KEYCODE_K;
+        break;
+        
+        case 'L':
+        Result = AKOS_KEYCODE_L;
+        break;
+        
+        case 'M':
+        Result = AKOS_KEYCODE_M;
+        break;
+        
+        case 'N':
+        Result = AKOS_KEYCODE_N;
+        break;
+        
+        case 'O':
+        Result = AKOS_KEYCODE_O;
+        break;
+        
+        case 'P':
+        Result = AKOS_KEYCODE_P;
+        break;
+        
+        case 'Q':
+        Result = AKOS_KEYCODE_Q;
+        break;
+        
+        case 'R':
+        Result = AKOS_KEYCODE_R;
+        break;
+        
+        case 'S':
+        Result = AKOS_KEYCODE_S;
+        break;
+        
+        case 'T':
+        Result = AKOS_KEYCODE_T;
+        break;
+        
+        case 'U':
+        Result = AKOS_KEYCODE_U;
+        break;
+        
+        case 'V':
+        Result = AKOS_KEYCODE_V;
+        break;
+        
+        case 'W':
+        Result = AKOS_KEYCODE_W;
+        break;
+        
+        case 'X':
+        Result = AKOS_KEYCODE_X;
+        break;
+        
+        case 'Y':
+        Result = AKOS_KEYCODE_Y;
+        break;
+        
+        case 'Z':
+        Result = AKOS_KEYCODE_Z;
+        break;
+        
+        case '0':
+        Result = AKOS_KEYCODE_0;
+        break;
+        
+        case '1':
+        Result = AKOS_KEYCODE_1;
+        break;
+        
+        case '2':
+        Result = AKOS_KEYCODE_2;
+        break;
+        
+        case '3':
+        Result = AKOS_KEYCODE_3;
+        break;
+        
+        case '4':
+        Result = AKOS_KEYCODE_4;
+        break;
+        
+        case '5':
+        Result = AKOS_KEYCODE_5;
+        break;
+        
+        case '6':
+        Result = AKOS_KEYCODE_6;
+        break;
+        
+        case '7':
+        Result = AKOS_KEYCODE_7;
+        break;
+        
+        case '8':
+        Result = AKOS_KEYCODE_8;
+        break;
+        
+        case '9':
+        Result = AKOS_KEYCODE_9;
+        break;
+        
+        case VK_SPACE:
+        Result = AKOS_KEYCODE_SPACE;
+        break;
+        
+        case VK_OEM_3:
+        Result = AKOS_KEYCODE_TICK;
+        break;
+        
+        case VK_OEM_MINUS:
+        Result = AKOS_KEYCODE_MINUS;
+        break;
+        
+        case VK_OEM_PLUS:
+        Result = AKOS_KEYCODE_EQUAL;
+        break;
+        
+        case VK_OEM_4:
+        Result = AKOS_KEYCODE_LEFTBRACKET;
+        break;
+        
+        case VK_OEM_6:
+        Result = AKOS_KEYCODE_RIGHTBRACKET;
+        break;
+        
+        case VK_OEM_1:
+        Result = AKOS_KEYCODE_SEMICOLON;
+        break;
+        
+        case VK_OEM_7:
+        Result = AKOS_KEYCODE_QUOTE;
+        break;
+        
+        case VK_OEM_COMMA:
+        Result = AKOS_KEYCODE_COMMA;
+        break;
+        
+        case VK_OEM_PERIOD:
+        Result = AKOS_KEYCODE_PERIOD;
+        break;
+        
+        case VK_OEM_2:
+        Result = AKOS_KEYCODE_FORWARDSLASH;
+        break;
+        
+        case VK_OEM_5:
+        Result = AKOS_KEYCODE_BACKSLASH;
+        break;
+        
+        case VK_TAB:
+        Result = AKOS_KEYCODE_TAB;
+        break;
+        
+        case VK_ESCAPE:
+        Result = AKOS_KEYCODE_ESCAPE;
+        break;
+        
+        case VK_PAUSE:
+        Result = AKOS_KEYCODE_PAUSE;
+        break;
+        
+        case VK_UP:
+        Result = AKOS_KEYCODE_UP;
+        break;
+        
+        case VK_DOWN:
+        Result = AKOS_KEYCODE_DOWN;
+        break;
+        
+        case VK_LEFT:
+        Result = AKOS_KEYCODE_LEFT;
+        break;
+        
+        case VK_RIGHT:
+        Result = AKOS_KEYCODE_RIGHT;
+        break;
+        
+        case VK_BACK:
+        Result = AKOS_KEYCODE_BACKSPACE;
+        break;
+        
+        case VK_RETURN:
+        Result = AKOS_KEYCODE_RETURN;
+        break;
+        
+        case VK_DELETE:
+        Result = AKOS_KEYCODE_DELETE;
+        break;
+        
+        case VK_INSERT:
+        Result = AKOS_KEYCODE_INSERT;
+        break;
+        
+        case VK_HOME:
+        Result = AKOS_KEYCODE_HOME;
+        break;
+        
+        case VK_END:
+        Result = AKOS_KEYCODE_END;
+        break;
+        
+        case VK_PRIOR:
+        Result = AKOS_KEYCODE_PAGEUP;
+        break;
+        
+        case VK_NEXT:
+        Result = AKOS_KEYCODE_PAGEDOWN;
+        break;
+        
+        case VK_CAPITAL:
+        Result = AKOS_KEYCODE_CAPSLOCK;
+        break;
+        
+        case VK_NUMLOCK:
+        Result = AKOS_KEYCODE_NUMLOCK;
+        break;
+        
+        case VK_SCROLL:
+        Result = AKOS_KEYCODE_SCROLLLOCK;
+        break;
+        
+        case VK_SHIFT:
+        Result = AKOS_KEYCODE_SHIFT;
+        break;
+        
+        case VK_CONTROL:
+        Result = AKOS_KEYCODE_CONTROL;
+        break;
+        
+        case VK_MENU:
+        Result = AKOS_KEYCODE_ALT;
+        break;
+        
+        case VK_LSHIFT:
+        Result = AKOS_KEYCODE_LSHIFT;
+        break;
+        
+        case VK_LCONTROL:
+        Result = AKOS_KEYCODE_LCONTROL;
+        break;
+        
+        case VK_LMENU:
+        Result = AKOS_KEYCODE_LALT;
+        break;
+        
+        case VK_LWIN:
+        Result = AKOS_KEYCODE_LSUPER;
+        break;
+        
+        case VK_RSHIFT:
+        Result = AKOS_KEYCODE_RSHIFT;
+        break;
+        
+        case VK_RCONTROL:
+        Result = AKOS_KEYCODE_RCONTROL;
+        break;
+        
+        case VK_RMENU:
+        Result = AKOS_KEYCODE_RALT;
+        break;
+        
+        case VK_RWIN:
+        Result = AKOS_KEYCODE_RSUPER;
+        break;
+        
+        case VK_SNAPSHOT:
+        Result = AKOS_KEYCODE_PRINTSCREEN;
+        break;
+        
+        case VK_APPS:
+        Result = AKOS_KEYCODE_MENU;
+        break;
+        
+        //NOTE(EVERYONE): We skip AKOS_KEYCODE_COMMAND
+        
+        case VK_F1:
+        Result = AKOS_KEYCODE_F1;
+        break;
+        
+        case VK_F2:
+        Result = AKOS_KEYCODE_F2;
+        break;
+        
+        case VK_F3:
+        Result = AKOS_KEYCODE_F3;
+        break;
+        
+        case VK_F4:
+        Result = AKOS_KEYCODE_F4;
+        break;
+        
+        case VK_F5:
+        Result = AKOS_KEYCODE_F5;
+        break;
+        
+        case VK_F6:
+        Result = AKOS_KEYCODE_F6;
+        break;
+        
+        case VK_F7:
+        Result = AKOS_KEYCODE_F7;
+        break;
+        
+        case VK_F8:
+        Result = AKOS_KEYCODE_F8;
+        break;
+        
+        case VK_F9:
+        Result = AKOS_KEYCODE_F9;
+        break;
+        
+        case VK_F10:
+        Result = AKOS_KEYCODE_F10;
+        break;
+        
+        case VK_F11:
+        Result = AKOS_KEYCODE_F11;
+        break;
+        
+        case VK_F12:
+        Result = AKOS_KEYCODE_F12;
+        break;
+        
+        case VK_F13:
+        Result = AKOS_KEYCODE_F13;
+        break;
+        
+        case VK_F14:
+        Result = AKOS_KEYCODE_F14;
+        break;
+        
+        case VK_F15:
+        Result = AKOS_KEYCODE_F15;
+        break;
+        
+        case VK_F16:
+        Result = AKOS_KEYCODE_F16;
+        break;
+        
+        case VK_F17:
+        Result = AKOS_KEYCODE_F17;
+        break;
+        
+        case VK_F18:
+        Result = AKOS_KEYCODE_F18;
+        break;
+        
+        case VK_F19:
+        Result = AKOS_KEYCODE_F19;
+        break;
+        
+        case VK_F20:
+        Result = AKOS_KEYCODE_F20;
+        break;
+        
+        case VK_F21:
+        Result = AKOS_KEYCODE_F21;
+        break;
+        
+        case VK_F22:
+        Result = AKOS_KEYCODE_F22;
+        break;
+        
+        case VK_F23:
+        Result = AKOS_KEYCODE_F23;
+        break;
+        
+        case VK_F24:
+        Result = AKOS_KEYCODE_F24;
+        break;
+        
+        case VK_NUMPAD0:
+        Result = AKOS_KEYCODE_NUMPAD0;
+        break;
+        
+        case VK_NUMPAD1:
+        Result = AKOS_KEYCODE_NUMPAD1;
+        break;
+        
+        case VK_NUMPAD2:
+        Result = AKOS_KEYCODE_NUMPAD2;
+        break;
+        
+        case VK_NUMPAD3:
+        Result = AKOS_KEYCODE_NUMPAD3;
+        break;
+        
+        case VK_NUMPAD4:
+        Result = AKOS_KEYCODE_NUMPAD4;
+        break;
+        
+        case VK_NUMPAD5:
+        Result = AKOS_KEYCODE_NUMPAD5;
+        break;
+        
+        case VK_NUMPAD6:
+        Result = AKOS_KEYCODE_NUMPAD6;
+        break;
+        
+        case VK_NUMPAD7:
+        Result = AKOS_KEYCODE_NUMPAD7;
+        break;
+        
+        case VK_NUMPAD8:
+        Result = AKOS_KEYCODE_NUMPAD8;
+        break;
+        
+        case VK_NUMPAD9:
+        Result = AKOS_KEYCODE_NUMPAD9;
+        break;
+        
+        case VK_MULTIPLY:
+        Result = AKOS_KEYCODE_NUMPADSTAR;
+        break;
+        
+        case VK_ADD:
+        Result = AKOS_KEYCODE_NUMPADPLUS;
+        break;
+        
+        case VK_SUBTRACT:
+        Result = AKOS_KEYCODE_NUMPADMINUS;
+        break;
+        
+        case VK_DECIMAL:
+        Result = AKOS_KEYCODE_NUMPADDOT;
+        break;
+        
+        case VK_DIVIDE:
+        Result = AKOS_KEYCODE_NUMPADSLASH;
+        break;
+    }
+    
+    return Result;
+}
+
+static akos_u32 AKOS__Win32_Get_Modifiers()
+{
+    akos_u32 Result = 0;
+    if(GetAsyncKeyState(VK_MENU) & 0x8000)
+        Result |= AKOS_MODIFIER_ALT;
+    
+    if(GetAsyncKeyState(VK_SHIFT) & 0x8000)
+        Result |= AKOS_MODIFIER_SHIFT;
+    
+    if(GetAsyncKeyState(VK_CONTROL) & 0x8000)
+        Result |= AKOS_MODIFIER_CONTROL;
+    
+    return Result;
+}
+
 AK_OS_DEF akos_event_list AKOS_Poll_Events()
 {
     akos_context* Context = AKOS_Get_Context();
@@ -1771,24 +2928,215 @@ AK_OS_DEF akos_event_list AKOS_Poll_Events()
     MSG Message;
     while(User32->PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
     {
+        akos_b32 Translate = akos_false;
+        
         switch(Message.message)
         {
             case WM_QUIT:
             {
                 //TODO(JJ): Delete context resources here
-                int x = 0;
+            } break;
+            
+            case WM_KEYDOWN:
+            case WM_SYSKEYDOWN:
+            {
+                if((Message.lParam & (1 << 30)) == 0)
+                {
+                    akos_event Event = {};
+                    Event.Type = AKOS_EVENT_TYPE_KEY_PRESSED;
+                    Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
+                    Event.KeyPressed.KeyCode = AKOS__VK_To_AKOS(Message.wParam);
+                    Event.KeyPressed.Modifiers = AKOS__Win32_Get_Modifiers();
+                    Event.KeyPressed.ScanCode = (akos_u32)LOBYTE(HIWORD(Message.lParam));
+                    
+                    AKOS__Add_Event(&Context->EventManager, &Event);
+                }
+                Translate = akos_true;
+            } break;
+            
+            case WM_KEYUP:
+            case WM_SYSKEYUP:
+            {
+                akos_event Event = {};
+                Event.Type = AKOS_EVENT_TYPE_KEY_RELEASED;
+                Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
+                Event.KeyReleased.KeyCode = AKOS__VK_To_AKOS(Message.wParam);
+                Event.KeyReleased.Modifiers = AKOS__Win32_Get_Modifiers();
+                Event.KeyReleased.ScanCode = (akos_u32)LOBYTE(HIWORD(Message.lParam));
+                AKOS__Add_Event(&Context->EventManager, &Event);
+                
+                Translate = akos_true;
+            } break;
+            
+            case WM_MOUSEMOVE:
+            {
+                akos_event Event = {};
+                Event.Type = AKOS_EVENT_TYPE_MOUSE_MOVED;
+                Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
+                Event.MouseMoved.MouseX = AKOS__GET_X_LPARAM(Message.lParam);
+                Event.MouseMoved.MouseY = AKOS__GET_Y_LPARAM(Message.lParam);
+                AKOS__Add_Event(&Context->EventManager, &Event);
+            } break;
+            
+            case WM_LBUTTONDOWN:
+            case WM_RBUTTONDOWN:
+            case WM_MBUTTONDOWN:
+            {
+                akos_event Event = {};
+                Event.Type = AKOS_EVENT_TYPE_MOUSE_PRESSED;
+                Event.MousePressed.MouseCode = AKOS__Mouse_Event_To_AKOS(Message.message);
+                Event.MousePressed.Modifiers = AKOS__Win32_Get_Modifiers();
+                Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
+                AKOS__Add_Event(&Context->EventManager, &Event);
+            } break;
+            
+            case WM_LBUTTONUP:
+            case WM_RBUTTONUP:
+            case WM_MBUTTONUP:
+            {
+                akos_event Event = {};
+                Event.Type = AKOS_EVENT_TYPE_MOUSE_RELEASED;
+                Event.MousePressed.MouseCode = AKOS__Mouse_Event_To_AKOS(Message.message);
+                Event.MousePressed.Modifiers = AKOS__Win32_Get_Modifiers();
+                Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
+                AKOS__Add_Event(&Context->EventManager, &Event);
+            } break;
+            
+            case WM_MOUSEWHEEL:
+            {
+                akos_event Event = {};
+                Event.Type = AKOS_EVENT_TYPE_MOUSE_SCROLLED;
+                Event.MouseScroll.Scroll = (float)GET_WHEEL_DELTA_WPARAM(Message.wParam) / (float)WHEEL_DELTA;
+                Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
+                AKOS__Add_Event(&Context->EventManager, &Event);
             } break;
             
             default:
             {
-                User32->TranslateMessage(&Message);
-                User32->DispatchMessage(&Message);
+                Translate = akos_true;
             } break;
         }
+        
+        if(Translate)
+        {
+            User32->TranslateMessage(&Message);
+            User32->DispatchMessage(&Message);
+        }
     }
-    
     akos_event_list EventList = AKOS__Get_Event_List(&Context->EventManager);
     return EventList;
+}
+
+AK_OS_DEF const char* AKOS_Get_Clipboard_Text()
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    if(!User32->OpenClipboard(NULL))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return NULL;
+    }
+    
+    HANDLE Handle = User32->GetClipboardData(CF_TEXT);
+    if(!Handle)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        User32->CloseClipboard();
+        return NULL;
+    }
+    
+    char* Text = (char*)GlobalLock(Handle);
+    if(!Text)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        User32->CloseClipboard();
+        return NULL;
+    }
+    
+    akos__clipboard* Clipboard = &Context->Clipboard;
+    akos_u64 TextLength = AKOS__String_Length(Text);
+    if(TextLength > Clipboard->TextLength)
+    {
+        akos_u64 AllocationSize = (TextLength > (Clipboard->TextLength*2)) ? TextLength : Clipboard->TextLength*2;
+        char* Str = (char*)AKOS__Malloc(AllocationSize);
+        if(!Str)
+        {
+            //TODO(JJ): Diagnostic and error logging
+            GlobalUnlock(Handle);
+            User32->CloseClipboard();
+            return NULL;
+        }
+        
+        if(Clipboard->Str)
+            AKOS__Free(Clipboard->Str);
+        
+        Clipboard->Str = Str;
+        Clipboard->TextLength = AllocationSize;
+    }
+    
+    AKOS__Memory_Copy(Clipboard->Str, Text, TextLength);
+    Clipboard->Str[TextLength] = 0;
+    
+    GlobalUnlock(Handle);
+    User32->CloseClipboard();
+    
+    return Clipboard->Str;
+}
+
+AK_OS_DEF void AKOS_Set_Clipboard_Text(const char* Text)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    if(!User32->OpenClipboard(NULL))
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    if(!User32->EmptyClipboard())
+    {
+        //TODO(JJ): Diagnostic and error logging
+        User32->CloseClipboard();
+        return;
+    }
+    
+    akos_u64 TextLength = AKOS__String_Length(Text);
+    HGLOBAL Handle = GlobalAlloc(GMEM_MOVEABLE, (TextLength+1)*sizeof(char));
+    if(!Handle)
+    {
+        //TODO(JJ): diagnostic and error logging
+        User32->CloseClipboard();
+        return;
+    }
+    
+    char* DstText = (char*)GlobalLock(Handle);
+    if(!DstText)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        GlobalFree(Handle);
+        User32->CloseClipboard();
+        return;
+    }
+    
+    AKOS__Memory_Copy(DstText, Text, TextLength*sizeof(char));
+    DstText[TextLength] = 0;
+    
+    GlobalUnlock(Handle);
+    
+    User32->SetClipboardData(CF_TEXT, Handle);
+    User32->CloseClipboard();
 }
 
 AK_OS_DEF akos_handle AKOS_Create_Window(const akos_window_create_info* WindowCreateInfo)
@@ -1870,6 +3218,610 @@ AK_OS_DEF void* AKOS_Window_Get_Platform_Data(akos_handle Handle)
     return Window->HWND;
 }
 
+AK_OS_DEF void AKOS_Show_Window(akos_handle WindowHandle, int IsFocused)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(Window)
+    {
+        akos__user32* User32 = &Context->User32;
+        USHORT Focused = IsFocused ? SW_SHOW : SW_SHOWNA;
+        User32->ShowWindow(Window->HWND, Focused);
+    }
+}
+
+AK_OS_DEF void AKOS_Set_Window_Pos(akos_handle WindowHandle, akos_i32 PosX, akos_i32 PosY)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(Window)
+    {
+        akos__user32* User32 = &Context->User32;
+        RECT Rect = {(LONG)PosX, (LONG)PosY, (LONG)PosX, (LONG)PosY};
+        User32->AdjustWindowRectEx(&Rect, Window->Style, FALSE, Window->ExStyle);
+        User32->SetWindowPos(Window->HWND, NULL, Rect.left, Rect.top, 0, 0, SWP_NOZORDER|SWP_NOSIZE|SWP_NOACTIVATE);
+    }
+}
+
+AK_OS_DEF void AKOS_Get_Window_Pos(akos_handle WindowHandle, akos_i32* PosX, akos_i32* PosY)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(Window)
+    {
+        akos__user32* User32 = &Context->User32;
+        POINT Pos = {0, 0};
+        User32->ClientToScreen(Window->HWND, &Pos);
+        if(PosX) *PosX = Pos.x;
+        if(PosY) *PosY = Pos.y;
+    }
+}
+
+AK_OS_DEF void AKOS_Set_Window_Dim(akos_handle WindowHandle, akos_i32 Width, akos_i32 Height)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(Window)
+    {
+        akos__user32* User32 = &Context->User32;
+        RECT Rect = {0, 0, (LONG)Width, (LONG)Height};
+        User32->AdjustWindowRectEx(&Rect, Window->Style, FALSE, Window->ExStyle);
+        User32->SetWindowPos(Window->HWND, NULL, 0, 0, Rect.right-Rect.left, Rect.bottom-Rect.top, SWP_NOZORDER|SWP_NOMOVE|SWP_NOACTIVATE);
+    }
+}
+
+AK_OS_DEF void AKOS_Get_Window_Dim(akos_handle WindowHandle, akos_i32* Width, akos_i32* Height)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(Window)
+    {
+        akos__user32* User32 = &Context->User32;
+        RECT ClientRect = {0, 0, 0, 0};
+        User32->GetClientRect(Window->HWND, &ClientRect);
+        if(Width) *Width = ClientRect.right-ClientRect.left;
+        if(Height) *Height = ClientRect.bottom-ClientRect.top;
+    }
+}
+
+AK_OS_DEF void AKOS_Set_Window_User_Data(akos_handle WindowHandle, akos_u64 UserData)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(Window) Window->UserData = UserData;
+}
+
+AK_OS_DEF akos_u64 AKOS_Get_Window_User_Data(akos_handle WindowHandle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(Window) return Window->UserData;
+    return 0;
+}
+
+AK_OS_DEF int AKOS_Is_Window_Focused(akos_handle WindowHandle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    return Context->User32.GetForegroundWindow() == Window->HWND;
+}
+
+AK_OS_DEF void AKOS_Focus_Window(akos_handle WindowHandle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    User32->BringWindowToTop(Window->HWND);
+    User32->SetForegroundWindow(Window->HWND);
+    User32->SetFocus(Window->HWND);
+}
+
+AK_OS_DEF int AKOS_Is_Window_Minimized(akos_handle WindowHandle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    return Context->User32.IsIconic(Window->HWND) != 0;
+}
+
+AK_OS_DEF akos_handle AKOS_Get_Focused_Window()
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    
+    HWND Window = User32->GetForegroundWindow();
+    if(Window)
+    {
+        DWORD ProcessID = GetCurrentProcessId();
+        DWORD WindowProcessID;
+        User32->GetWindowThreadProcessId(Window, &WindowProcessID);
+        if(WindowProcessID == ProcessID)
+            return AKOS__Win32_Get_Handle_From_HWND(Window);
+    }
+    return 0;
+}
+
+AK_OS_DEF void AKOS_Get_Cursor_Pos(akos_i32* PosX, akos_i32* PosY)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    
+    POINT Point;
+    User32->GetCursorPos(&Point);
+    if(PosX) *PosX = Point.x;
+    if(PosY) *PosY = Point.y;
+}
+
+AK_OS_DEF void AKOS_Get_Window_Cursor_Pos(akos_handle WindowHandle, akos_i32* PosX, akos_i32* PosY)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    POINT Point;
+    if(User32->GetCursorPos(&Point) && User32->ScreenToClient(Window->HWND, &Point))
+    {
+        if(PosX) *PosX = Point.x;
+        if(PosY) *PosY = Point.y;
+    }
+}
+
+AK_OS_DEF void AKOS_Set_Cursor_Pos(akos_i32 PosX, akos_i32 PosY)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    User32->SetCursorPos(PosX, PosY);
+}
+
+AK_OS_DEF void AKOS_Set_Window_Cursor_Pos(akos_handle WindowHandle, akos_i32 PosX, akos_i32 PosY)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    POINT Point = {PosX, PosY};
+    if(User32->ClientToScreen(Window->HWND, &Point))
+        User32->SetCursorPos(Point.x, Point.y);
+}
+
+AK_OS_DEF void AKOS_Set_Mouse_Capture(akos_handle WindowHandle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    akos__user32* User32 = &Context->User32;
+    
+    if(WindowHandle)
+    {
+        akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+        if(!Window)
+        {
+            //TODO(JJ): Diangostic and error logging
+            return;
+        }
+        
+        User32->SetCapture(Window->HWND);
+    }
+    else
+    {
+        User32->ReleaseCapture();
+    }
+}
+
+AK_OS_DEF akos_handle AKOS_Get_Mouse_Capture()
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    akos__user32* User32 = &Context->User32;
+    return AKOS__Win32_Get_Handle_From_HWND(User32->GetCapture());
+}
+
+AK_OS_DEF int AKOS_GL_Make_Current(akos_handle WindowHandle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return akos_false;
+    }
+    
+    if(Window->DeviceContext && Window->RenderContext)
+    {
+        akos__opengl32* OpenGL32 = &Context->OpenGL32;
+        if(!OpenGL32->wglMakeCurrent(Window->DeviceContext, Window->RenderContext))
+            return akos_false;
+    }
+    else
+    {
+        akos__user32* User32 = &Context->User32;
+        HDC DeviceContext = User32->GetDC(Window->HWND);
+        if(!DeviceContext)
+        {
+            //TODO(JJ): Diagnostic and error logging
+            return akos_false;
+        }
+        
+        int AttribList[] = 
+        {
+            AKOS__WGL_DRAW_TO_WINDOW_ARB, akos_true,
+            AKOS__WGL_ACCELERATION_ARB, AKOS__WGL_FULL_ACCELERATION_ARB,
+            AKOS__WGL_SUPPORT_OPENGL_ARB, akos_true, 
+            AKOS__WGL_DOUBLE_BUFFER_ARB, akos_true,
+            AKOS__WGL_PIXEL_TYPE_ARB, AKOS__WGL_TYPE_RGBA_ARB,
+            AKOS__WGL_COLOR_BITS_ARB, 32, 
+            0
+        };
+        
+        int TargetPixelFormatIndex;
+        
+        akos__gdi32* GDI32 = &Context->GDI32;
+        akos__wgl* WGL = &Context->WGL;
+        akos__opengl32* OpenGL32 = &Context->OpenGL32;
+        
+        UINT NumberOfFormats;
+        if(!WGL->wglChoosePixelFormatARB(DeviceContext, AttribList, 0, 1, &TargetPixelFormatIndex, &NumberOfFormats))
+        {
+            //TODO(JJ): Diagnostic and error logging
+            User32->ReleaseDC(Window->HWND, DeviceContext);
+            return akos_false;
+        }
+        
+        PIXELFORMATDESCRIPTOR PixelFormat = {};
+        if(!GDI32->DescribePixelFormat(DeviceContext, TargetPixelFormatIndex, sizeof(PixelFormat), &PixelFormat))
+        {
+            //TODO(JJ): Diagnostic and error logging
+            User32->ReleaseDC(Window->HWND, DeviceContext);
+            return akos_false;
+        }
+        
+        if(!GDI32->SetPixelFormat(DeviceContext, TargetPixelFormatIndex, &PixelFormat))
+        {
+            //TODO(JJ): Diagnostic and error logging
+            User32->ReleaseDC(Window->HWND, DeviceContext);
+            return akos_false;
+        }
+        
+        HGLRC RenderContext = WGL->wglCreateContextAttribsARB(DeviceContext, NULL, Context->WGLAttributes);
+        if(!RenderContext)
+        {
+            //TODO(JJ): Diagnostic and error logging
+            User32->ReleaseDC(Window->HWND, DeviceContext);
+            return akos_false;
+        }
+        
+        if(!OpenGL32->wglMakeCurrent(DeviceContext, RenderContext))
+        {
+            //TODO(JJ): Diagnostic and error logging
+            User32->ReleaseDC(Window->HWND, DeviceContext);
+            OpenGL32->wglDeleteContext(RenderContext);
+            return akos_false;
+        }
+        
+        Window->DeviceContext = DeviceContext;
+        Window->RenderContext = RenderContext;
+    }
+    
+    return akos_true;
+}
+
+AK_OS_DEF void AKOS_GL_Set_Swap_Interval(int SwapInterval)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    if(Context->WGL.wglSwapIntervalEXT) Context->WGL.wglSwapIntervalEXT(SwapInterval);
+}
+
+AK_OS_DEF void AKOS_GL_Swap_Buffers(akos_handle WindowHandle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__window* Window = (akos__window*)AKOS__Pool_Get(&Context->Windows, WindowHandle);
+    if(!Window)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    if(Window->DeviceContext)
+    {
+        akos__gdi32* GDI32 = &Context->GDI32;
+        GDI32->SwapBuffers(Window->DeviceContext);
+    }
+}
+
+AK_OS_DEF akos_handle AKOS_Create_Cursor(akos_u32 SystemCode)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    
+    LPCSTR Str = NULL;
+    switch(SystemCode)
+    {
+        case AKOS_CURSOR_ARROW:
+        Str = IDC_ARROW;
+        break;
+        
+        case AKOS_CURSOR_IBEAM:
+        Str = IDC_IBEAM;
+        break;
+        
+        case AKOS_CURSOR_SIZEALL:
+        Str = IDC_SIZEALL;
+        break;
+        
+        case AKOS_CURSOR_SIZENS:
+        Str = IDC_SIZENS;
+        break;
+        
+        case AKOS_CURSOR_SIZEEW:
+        Str = IDC_SIZEWE;
+        break;
+        
+        case AKOS_CURSOR_SIZENESW:
+        Str = IDC_SIZENESW;
+        break;
+        
+        case AKOS_CURSOR_SIZENWSE:
+        Str = IDC_SIZENWSE;
+        break;
+        
+        case AKOS_CURSOR_HAND:
+        Str = IDC_HAND;
+        break;
+        
+        case AKOS_CURSOR_NO:
+        Str = IDC_NO;
+        break;
+    }
+    
+    if(!Str) return 0;
+    
+    HCURSOR Handle = User32->LoadCursorA(NULL, Str);
+    if(!Handle)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos_handle Result = AKOS__Pool_Allocate(&Context->Cursors);
+    if(!Result)
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    akos__cursor* Cursor = (akos__cursor*)AKOS__Pool_Get(&Context->Cursors, Result);
+    Cursor->Handle = Handle;
+    return Result;
+}
+
+AK_OS_DEF void AKOS_Delete_Cursor(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__cursor* Cursor = (akos__cursor*)AKOS__Pool_Get(&Context->Cursors, Handle);
+    if(Cursor)
+    {
+        akos__user32* User32 = &Context->User32;
+        User32->DestroyCursor(Cursor->Handle);
+        AKOS__Pool_Free(&Context->Cursors, Handle);
+    }
+}
+
+AK_OS_DEF void AKOS_Set_Cursor(akos_handle Handle)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    akos__user32* User32 = &Context->User32;
+    
+    if(Handle)
+    {
+        akos__cursor* Cursor = (akos__cursor*)AKOS__Pool_Get(&Context->Cursors, Handle);
+        if(!Cursor)
+        {
+            //TODO(JJ): Diagnostic and error logging
+            return;
+        }
+        
+        User32->SetCursor(Cursor->Handle);
+        Context->SetCursorHandle = Handle;
+    }
+    else
+    {
+        User32->SetCursor(NULL);
+        Context->SetCursorHandle = 0;
+    }
+    
+}
+
+AK_OS_DEF akos_handle AKOS_Get_Cursor()
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return 0;
+    }
+    
+    if(Context->SetCursorHandle)
+    {
+        if(AKOS__Pool_Get(&Context->Cursors, Context->SetCursorHandle))
+            return Context->SetCursorHandle;
+        else
+            Context->SetCursorHandle = 0;
+    }
+    
+    return 0;
+}
+
+AK_OS_DEF void AKOS_Show_Cursor(int Show)
+{
+    akos_context* Context = AKOS_Get_Context();
+    if(!Context) 
+    {
+        //TODO(JJ): Diagnostic and error logging
+        return;
+    }
+    
+    Context->User32.ShowCursor(Show);
+}
+
 #ifdef AK_OS_VULKAN_HELPERS
 
 AK_OS_DEF VkSurfaceKHR AKOS_Create_Vulkan_Surface(akos_handle WindowHandle, VkInstance Instance,
@@ -1936,16 +3888,16 @@ static akos_context* AKOS__Context;
 AK_OS_DEF akos_context* AKOS_Get_Context() { return AKOS__Context; }
 AK_OS_DEF void AKOS_Set_Context(akos_context* Context) { AKOS__Context = Context; }
 
-AK_OS_DEF bool AKOS_Write_Entire_File(const char* Filepath, void* Data, akos_u32 WriteSize)
+AK_OS_DEF int AKOS_Write_Entire_File(const char* Filepath, void* Data, akos_u32 WriteSize)
 {
     akos_handle Handle = AKOS_Create_File(Filepath, AKOS_FILE_FLAG_WRITE);
     if(!Handle)
     {
         //TODO(JJ): Read error from create file
-        return false;
+        return akos_false;
     }
     
-    bool Result = AKOS_Write_File(Handle, Data, WriteSize, AKOS_INVALID_FILE_SIZE);
+    int Result = AKOS_Write_File(Handle, Data, WriteSize, AKOS_INVALID_FILE_SIZE);
     if(!Result)
     {
         //TODO(JJ): Read error from write file
