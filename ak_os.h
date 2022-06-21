@@ -1298,6 +1298,7 @@ typedef BOOL akos__SetWindowPos(HWND Window, HWND InsertAfter, int X, int Y, int
 typedef BOOL akos__GetClientRect(HWND Window, LPRECT lpRect);
 typedef HDC akos__GetDC(HWND Window);
 typedef int akos__ReleaseDC(HWND Window, HDC hDC);
+typedef SHORT akos__GetAsyncKeyState(int vKey);
 
 typedef struct akos__user32
 {
@@ -1342,6 +1343,7 @@ typedef struct akos__user32
     akos__GetClientRect* GetClientRect;
     akos__GetDC* GetDC;
     akos__ReleaseDC* ReleaseDC;
+    akos__GetAsyncKeyState* GetAsyncKeyState;
 } akos__user32;
 
 //~GDI32 functions
@@ -1617,6 +1619,7 @@ akos_b32 AKOS__Win32_Init_Libraries(akos_context* Context)
     AKOS__Win32_LoadProc(User32, GetClientRect);
     AKOS__Win32_LoadProc(User32, GetDC);
     AKOS__Win32_LoadProc(User32, ReleaseDC);
+    AKOS__Win32_LoadProc(User32, GetAsyncKeyState);
     
     akos__gdi32* GDI32 = &Context->GDI32;
     GDI32->Library = LoadLibrary("GDI32.dll");
@@ -2900,13 +2903,15 @@ static akos_keycode AKOS__VK_To_AKOS(DWORD KeyCode)
 static akos_u32 AKOS__Win32_Get_Modifiers()
 {
     akos_u32 Result = 0;
-    if(GetAsyncKeyState(VK_MENU) & 0x8000)
+    akos__user32* User32 = &AKOS_Get_Context()->User32;
+    
+    if(User32->GetAsyncKeyState(VK_MENU) & 0x8000)
         Result |= AKOS_MODIFIER_ALT;
     
-    if(GetAsyncKeyState(VK_SHIFT) & 0x8000)
+    if(User32->GetAsyncKeyState(VK_SHIFT) & 0x8000)
         Result |= AKOS_MODIFIER_SHIFT;
     
-    if(GetAsyncKeyState(VK_CONTROL) & 0x8000)
+    if(User32->GetAsyncKeyState(VK_CONTROL) & 0x8000)
         Result |= AKOS_MODIFIER_CONTROL;
     
     return Result;
