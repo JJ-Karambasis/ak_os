@@ -236,7 +236,7 @@ void ImGui_ImplAKOS_NewFrame()
     io.DisplayFramebufferScale = ImVec2(1, 1);
     
     akos_u64 current_time = AKOS_Performance_Counter();
-    io.DeltaTime = (double)(current_time-bd->Time)/(double)AKOS_Performance_Frequency();
+    io.DeltaTime = (float)(current_time-bd->Time)/(float)AKOS_Performance_Frequency();
     bd->Time = current_time;
     
     ImGui_ImplAKOS_UpdateMousePos();

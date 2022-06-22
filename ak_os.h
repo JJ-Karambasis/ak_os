@@ -2950,7 +2950,7 @@ AK_OS_DEF akos_event_list AKOS_Poll_Events()
                     akos_event Event = {};
                     Event.Type = AKOS_EVENT_TYPE_KEY_PRESSED;
                     Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
-                    Event.KeyPressed.KeyCode = AKOS__VK_To_AKOS(Message.wParam);
+                    Event.KeyPressed.KeyCode = AKOS__VK_To_AKOS((DWORD)Message.wParam);
                     Event.KeyPressed.Modifiers = AKOS__Win32_Get_Modifiers();
                     Event.KeyPressed.ScanCode = (akos_u32)LOBYTE(HIWORD(Message.lParam));
                     
@@ -2965,7 +2965,7 @@ AK_OS_DEF akos_event_list AKOS_Poll_Events()
                 akos_event Event = {};
                 Event.Type = AKOS_EVENT_TYPE_KEY_RELEASED;
                 Event.Window = AKOS__Win32_Get_Handle_From_HWND(Message.hwnd);
-                Event.KeyReleased.KeyCode = AKOS__VK_To_AKOS(Message.wParam);
+                Event.KeyReleased.KeyCode = AKOS__VK_To_AKOS((DWORD)Message.wParam);
                 Event.KeyReleased.Modifiers = AKOS__Win32_Get_Modifiers();
                 Event.KeyReleased.ScanCode = (akos_u32)LOBYTE(HIWORD(Message.lParam));
                 AKOS__Add_Event(&Context->EventManager, &Event);
